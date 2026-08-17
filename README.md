@@ -36,12 +36,13 @@ directly (no fork needed):
 ```bash
 git clone https://github.com/sunilmogadati/wb-health-monitor.git
 cd wb-health-monitor
-git checkout develop      # the shared integration branch — branch your work off this
+git checkout -b <YOUR-INITIALS>_Dev      # your personal working branch, e.g. SM_Dev
+git push -u origin <YOUR-INITIALS>_Dev
 ```
 
-You contribute on **feature branches off `develop`** and open pull requests **into `develop`** — see
-*Before you open a pull request* below. `develop` integrates everyone's work; `main` stays stable
-(we merge `develop` → `main` at milestones). Never commit straight to `develop` or `main`.
+You do **all** your work on **your own `XX_Dev` branch** (your initials + `_Dev`) and open pull
+requests **into `main`**. `main` is the shared, always-working project — **never commit to it
+directly**. See *Before you open a pull request* below.
 
 ### 2. Create your local `.env`
 
@@ -146,20 +147,20 @@ Edits to `backend/` reload automatically — the source is bind-mounted into the
 
 ## Before you open a pull request
 
-1. Get the latest `develop` and branch off it:
+1. Keep your `XX_Dev` branch in sync with the shared project (do this often — it avoids a big merge at the end):
    ```bash
-   git checkout develop && git pull
-   git checkout -b feat/<your-ticket>
+   git checkout main && git pull          # get everyone's merged work
+   git checkout XX_Dev && git merge main   # bring it into your branch
    ```
 2. Write the **test first**, then the code (this project is test-driven — see the constitution).
 3. Run the full check locally and get it green:
    ```bash
    make ci
    ```
-4. Commit, push your branch, and open a PR **into `develop`**:
+4. Commit, push, and open a PR **into `main`**:
    ```bash
    git commit -am "feat: <what you did>"
-   git push -u origin feat/<your-ticket>
+   git push
    ```
 
 You own your ticket end to end: research it, spec-check it, test it, build it, ship the PR.
