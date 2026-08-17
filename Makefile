@@ -12,7 +12,7 @@
 # explicitly to pick up the repository-root `.env`. The wildcard makes it conditional: `--env-file`
 # on a missing file is a hard error, and a clean checkout has no `.env` until `.env.example` is copied.
 ENV_FILE := $(wildcard .env)
-COMPOSE := docker compose -f infra/docker-compose.yml $(if $(ENV_FILE),--env-file .env,)
+COMPOSE := docker compose -f compose.yaml $(if $(ENV_FILE),--env-file .env,)
 EXEC_API := $(COMPOSE) exec -T api
 
 .DEFAULT_GOAL := help

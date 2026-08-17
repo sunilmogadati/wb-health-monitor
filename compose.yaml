@@ -3,7 +3,7 @@
 name: wb-health-monitor
 
 services:
-  app:
+  api:
     build:
       context: ./backend
       dockerfile: Dockerfile
