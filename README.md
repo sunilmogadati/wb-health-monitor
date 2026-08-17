@@ -28,21 +28,16 @@ Everything runs in Docker, so you don't install Python or Postgres locally. Foll
 
 ### 1. Get the code
 
-**Recommended — fork then clone** (this is how you'll contribute changes):
+You'll be added as a **collaborator** on this repository, so accept the GitHub invite, then clone it
+directly (no fork needed):
 
-1. Click **Fork** on `https://github.com/sunilmogadati/wb-health-monitor` → creates `https://github.com/<your-username>/wb-health-monitor`.
-2. Clone **your fork**:
-   ```bash
-   git clone https://github.com/<your-username>/wb-health-monitor.git
-   cd wb-health-monitor
-   ```
-3. Add the shared repo as `upstream` so you can pull updates:
-   ```bash
-   git remote add upstream https://github.com/sunilmogadati/wb-health-monitor.git
-   ```
+```bash
+git clone https://github.com/sunilmogadati/wb-health-monitor.git
+cd wb-health-monitor
+```
 
-*(If you were added as a collaborator instead, you can clone the shared repo directly:
-`git clone https://github.com/sunilmogadati/wb-health-monitor.git`.)*
+You contribute on **feature branches** and open pull requests — see *Before you open a pull request*
+below. Keep `main` clean; never commit straight to it.
 
 ### 2. Create your local `.env`
 
@@ -134,12 +129,20 @@ Edits to `backend/` reload automatically — the source is bind-mounted into the
 
 ## Before you open a pull request
 
-1. Write the **test first**, then the code (this project is test-driven — see the constitution).
-2. Run the full check locally and get it green:
+1. Start a **feature branch** for your ticket:
+   ```bash
+   git checkout -b feat/<your-ticket>
+   ```
+2. Write the **test first**, then the code (this project is test-driven — see the constitution).
+3. Run the full check locally and get it green:
    ```bash
    make ci
    ```
-3. Commit, push to your fork, and open a PR against `sunilmogadati/wb-health-monitor`.
+4. Commit, push your branch, and open a PR against `main`:
+   ```bash
+   git commit -am "feat: <what you did>"
+   git push -u origin feat/<your-ticket>
+   ```
 
 You own your ticket end to end: research it, spec-check it, test it, build it, ship the PR.
 
