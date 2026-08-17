@@ -7,6 +7,8 @@ their spending, and serves the result over an API plus a country-to-region dashb
 
 Built by the training cohort as a collaborative team project.
 
+> **Where does the data come from, and what's MinIO?** See **[`docs/data-and-storage.md`](docs/data-and-storage.md)** — the World Bank data source (`wbgapi`) and how storage works (MinIO object store + Postgres warehouse).
+
 ---
 
 ## Local setup — get running in ~10 minutes
@@ -73,7 +75,19 @@ DB_POOL_MAX=5
 DB_POOL_OVERFLOW=10
 DB_POOL_ACQUIRE_TIMEOUT_SECONDS=30
 DB_POOL_RECYCLE_SECONDS=1800
+
+# Object storage (MinIO — S3-compatible; the raw data landing zone)
+MINIO_ROOT_USER=wbhealth
+MINIO_ROOT_PASSWORD=wbhealth_local_dev
+MINIO_API_PORT=9000
+MINIO_CONSOLE_PORT=9001
+S3_ENDPOINT_URL=http://minio:9000
+S3_ACCESS_KEY=wbhealth
+S3_SECRET_KEY=wbhealth_local_dev
+S3_BUCKET_RAW=raw
 ```
+
+*(`MINIO_ROOT_PASSWORD` must be at least 8 characters. `S3_ACCESS_KEY`/`S3_SECRET_KEY` should match the MinIO user/password.)*
 
 - **Never commit `.env`** — it is git-ignored on purpose. Only `.env.example` is committed.
 - `POSTGRES_HOST=db` and `@db:5432` in `DATABASE_URL`: inside Docker, the API reaches the database by its **service name** (`db`), not `localhost`.
@@ -99,8 +113,9 @@ Open in your browser:
 
 - **API docs (Swagger):** http://localhost:8000/api/v1/docs
 - **Health:** http://localhost:8000/api/v1/health
+- **MinIO console (object storage):** http://localhost:9001 — sign in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from your `.env`
 
-*(If you changed `API_PORT`, use that port instead of 8000.)*
+*(If you changed the ports, use your values.)*
 
 You're set up. 🎉
 
@@ -166,11 +181,11 @@ This project follows **Spec-Driven Development** (GitHub Spec Kit). The flow is
 ```
 backend/          FastAPI app (app/main.py), Alembic migrations, Dockerfile, pyproject.toml
 tests/            the test suite
-compose.yaml      the local stack: app (FastAPI) + db (Postgres 16)
+compose.yaml      the local stack: api (FastAPI) + db (Postgres 16) + minio (object storage)
 Makefile          the dev commands above
 .specify/         Spec Kit: constitution, templates, scripts
 .claude/          commands, agents, and skills for the workflow
-docs/adr/         architecture decision records (one decision per file)
+docs/             data-and-storage.md (data source + MinIO) · adr/ (decisions)
 .env.example      copy to .env (never commit .env)
 ```
 
