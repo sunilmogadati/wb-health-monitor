@@ -36,10 +36,12 @@ directly (no fork needed):
 ```bash
 git clone https://github.com/sunilmogadati/wb-health-monitor.git
 cd wb-health-monitor
+git checkout develop      # the shared integration branch — branch your work off this
 ```
 
-You contribute on **feature branches** and open pull requests — see *Before you open a pull request*
-below. Keep `main` clean; never commit straight to it.
+You contribute on **feature branches off `develop`** and open pull requests **into `develop`** — see
+*Before you open a pull request* below. `develop` integrates everyone's work; `main` stays stable
+(we merge `develop` → `main` at milestones). Never commit straight to `develop` or `main`.
 
 ### 2. Create your local `.env`
 
@@ -144,8 +146,9 @@ Edits to `backend/` reload automatically — the source is bind-mounted into the
 
 ## Before you open a pull request
 
-1. Start a **feature branch** for your ticket:
+1. Get the latest `develop` and branch off it:
    ```bash
+   git checkout develop && git pull
    git checkout -b feat/<your-ticket>
    ```
 2. Write the **test first**, then the code (this project is test-driven — see the constitution).
@@ -153,7 +156,7 @@ Edits to `backend/` reload automatically — the source is bind-mounted into the
    ```bash
    make ci
    ```
-4. Commit, push your branch, and open a PR against `main`:
+4. Commit, push your branch, and open a PR **into `develop`**:
    ```bash
    git commit -am "feat: <what you did>"
    git push -u origin feat/<your-ticket>

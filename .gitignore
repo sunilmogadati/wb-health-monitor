@@ -28,5 +28,10 @@ out/
 .idea/
 *.swp
 
+# --- local data exploration (not part of the project) ---
+explore_wb.py
+wb_health_sample.csv
+scratch/
+
 # --- per-developer volatile handoff (template is committed) ---
 .specify/memory/session-state.md
