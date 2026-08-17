@@ -1,0 +1,84 @@
+# Session state
+
+**Updated:** [YYYY-MM-DD] · **Author:** [who wrote this handoff, and for whom]
+**Branch:** `[current-branch]`, based on `[base-branch]` at `[short-sha]`
+**Gitignored, per-developer.** Nothing here is committed.
+
+<!--
+  This is the VOLATILE session-continuity file. Copy it to .specify/memory/session-state.md (drop the
+  .template suffix) and add that path to .gitignore. It is per-developer scratch: "where the repo
+  actually is" and "what I was doing", so the next session (yours or an agent's) starts oriented
+  instead of re-deriving. DURABLE outcomes — decisions and their rationale — belong in docs/adr/
+  (committed), not here. Rewrite this file freely; it has no history worth preserving.
+-->
+
+---
+
+## Where the repository actually is
+
+**Branch to use: `[branch]`.** [Why this one — newest, live, etc.] [If branches stack or diverge in a
+way that is easy to get wrong, say so, and give the command to check the real tip:]
+
+```bash
+git for-each-ref --sort=-committerdate --format='%(committerdate:short)  %(refname:short)' refs/remotes/ | head -5
+```
+
+[One or two sentences on anything surprising about the branch/CI state — e.g. "CI triggers only on
+`main`, so the pipeline has never run on any branch carrying code." Absence of a gate is a finding.]
+
+### Spec status
+
+| Spec | Status | Tasks |
+|---|---|---|
+| `[NNN-slug]` | [Draft / Approved / Implemented] | [N done, M partial, K open] |
+| `[NNN-slug]` | [status] | [counts, or "no tasks.md; /speckit.tasks never run"] |
+
+---
+
+## What changed since the last session
+
+[The delta since the previous handoff date. Group by theme, newest-relevant first. Name files. Call
+out anything that moved, was renamed, or was deleted, and anything that did NOT change (e.g. "the
+stack and test suite are byte-identical"). This is the section a returning reader scans first.]
+
+- **[Change 1].** [what and where]
+- **[Change 2].** [what and where]
+- **Not changed:** [the parts that are stable, so the reader does not re-investigate them]
+
+---
+
+## What I did this session
+
+- [Concrete actions taken. Note anything uncommitted/unpushed explicitly.]
+
+**[State the commit/push status in one blunt line, e.g. "Nothing is committed. Nothing is pushed."]**
+
+---
+
+## The finding worth raising first
+
+[If one thing deserves attention above all else — a contradiction between two authoritative surfaces,
+a silent gap, a blocker — put it here with the evidence, not buried in a list. If there is none, delete
+this section.]
+
+---
+
+## Open items
+
+| Item | Owner | Note |
+|---|---|---|
+| [decision/blocker id + summary] | [who] | [what it blocks / what would unblock it] |
+
+---
+
+## Picking this back up
+
+```bash
+cd [path/to/repo]
+git fetch --all
+git for-each-ref --sort=-committerdate --format='%(committerdate:short)  %(refname:short)' refs/remotes/ | head -5
+git log --oneline [branch]..origin/[newest]   # what landed while away
+```
+
+Then read, in order: [the shortest path to being productive again — the getting-started doc, the specs
+index, the most relevant ADR. Point at durable committed docs, not at this file.]

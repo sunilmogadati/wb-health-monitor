@@ -1,0 +1,48 @@
+[project]
+name = "wb-health-monitor"
+version = "0.1.0"
+description = "wb-health-monitor platform API."
+requires-python = ">=3.11"
+
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.34.0",
+  "pydantic==2.10.4",
+  "pydantic-settings==2.7.0",
+  "sqlalchemy==2.0.36",
+  "alembic==1.14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.4",
+  "httpx==0.28.1",
+  "mypy==1.14.0",
+  "ruff==0.8.4",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+# Ruff configuration lives in the REPOSITORY ROOT (`ruff.toml`), not here, so a single config covers
+# backend/ and its sibling tests/ regardless of a job's working directory.
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+# Generated migration scripts are not worth strict-typing.
+exclude = ["alembic/versions/"]
+
+[[tool.mypy.overrides]]
+module = ["alembic.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# Tests live at the repository root, a sibling of backend/. Paths are relative to this file.
+testpaths = ["../tests"]
+addopts = "-r fEs --strict-markers"

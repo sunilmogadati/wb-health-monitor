@@ -1,0 +1,31 @@
+# Python lint and format configuration for the whole repository.
+#
+# AT THE ROOT, not in backend/pyproject.toml, so a single config covers backend/ and its SIBLING
+# tests/ and cannot resolve differently depending on the working directory a job happened to use.
+
+target-version = "py311"
+line-length = 100
+extend-exclude = [
+  "backend/alembic/versions",
+]
+
+[lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "S", "C4", "SIM", "RUF"]
+ignore = [
+  "S101",  # pytest needs bare assert
+]
+
+[lint.per-file-ignores]
+# Alembic's generated env.py uses module-level side effects by design.
+"backend/alembic/env.py" = ["E402"]
+# The test suite may drive real CLIs and use bare asserts.
+"tests/**" = ["S603", "S607"]
+
+[lint.isort]
+# `alembic` is a third-party library; the backend/alembic/ directory would otherwise make ruff infer
+# it as first-party.
+known-third-party = ["alembic"]
+known-first-party = ["app", "tests"]
+
+[format]
+quote-style = "double"

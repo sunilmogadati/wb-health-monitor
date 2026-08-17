@@ -1,0 +1,32 @@
+# --- Secrets / local env (NEVER commit) ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+dist/
+build/
+
+# --- Node / Next.js (stretch web service) ---
+node_modules/
+.next/
+out/
+
+# --- Editors / OS ---
+.DS_Store
+.idea/
+*.swp
+
+# --- per-developer volatile handoff (template is committed) ---
+.specify/memory/session-state.md
