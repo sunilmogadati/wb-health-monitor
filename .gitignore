@@ -49,3 +49,6 @@ backend/dbt/dbt_packages/
 
 # --- per-developer volatile handoff (template is committed) ---
 .specify/memory/session-state.md
+
+# dbt machine-specific anonymous id
+backend/dbt/.user.yml
