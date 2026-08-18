@@ -1,0 +1,52 @@
+{
+  "executive_summary": "We tested six machine learning models to predict national life expectancy using four country-level indicators: health spending as a share of GDP, GDP per capita, internet penetration, and fertility rate. The best model, Random Forest, explains roughly 84% of the variation in life expectancy and predicts within about 3 years on average. Fertility rate and GDP per capita were by far the strongest predictors.",
+  "best_model": "Random Forest",
+  "best_model_justification": "Random Forest achieved the highest accuracy of all six models tested, with an R-squared of 0.839 (highest), an RMSE of 3.05 years (lowest), and an MAE of 2.37 years (lowest). It led on every error metric simultaneously, and it required no feature scaling, which makes it simpler to deploy and maintain.",
+  "model_results": [
+    {
+      "model_name": "Random Forest",
+      "r2_score": 0.8392768884526411,
+      "rmse": 3.0450584595801624,
+      "verdict": "Best overall performer, leading on every accuracy metric."
+    },
+    {
+      "model_name": "KNN",
+      "r2_score": 0.8238462068373791,
+      "rmse": 3.187883696053891,
+      "verdict": "Strong runner-up, though it requires feature scaling to work."
+    },
+    {
+      "model_name": "AdaBoost",
+      "r2_score": 0.8155002215289822,
+      "rmse": 3.2625290953742767,
+      "verdict": "Solid mid-pack performance with no scaling needed."
+    },
+    {
+      "model_name": "Linear Regression",
+      "r2_score": 0.811866603553427,
+      "rmse": 3.294499279690442,
+      "verdict": "Surprisingly competitive given its simplicity and interpretability."
+    },
+    {
+      "model_name": "XGBoost",
+      "r2_score": 0.7729720064320581,
+      "rmse": 3.619063259007397,
+      "verdict": "Underperformed expectations and likely needs hyperparameter tuning."
+    },
+    {
+      "model_name": "Decision Tree",
+      "r2_score": 0.7020180892175943,
+      "rmse": 4.1462111886163004,
+      "verdict": "Weakest model, confirming that a single tree overfits this small dataset."
+    }
+  ],
+  "top_predictive_feature": "fertility_rate",
+  "key_findings": [
+    "Fertility rate is the single most influential predictor, accounting for 46.5% of the Random Forest model's predictive importance — more than any other factor.",
+    "GDP per capita is the second strongest driver at 35.5% importance; together with fertility rate, these two variables account for over 82% of the model's decision-making.",
+    "Health spending as a percentage of GDP contributed only 5.0% importance, suggesting how much a country spends on health matters far less than its broader demographic and economic profile.",
+    "The Random Forest model predicts life expectancy within an average error of 2.37 years (MAE) and explains 83.9% of the variation across countries.",
+    "The performance gap between the best model (R2 0.839) and simple Linear Regression (R2 0.812) is modest, indicating the underlying relationships are largely linear and well captured even by basic methods."
+  ],
+  "recommendation": "Deploy the Random Forest model as the working baseline, but first validate its stability with cross-validation given the small test set of only 42 countries. In parallel, invest in expanding the feature set — since health spending contributed so little, adding variables such as education level, sanitation access, or urbanization is likely to yield a larger accuracy gain than further tuning of the current models."
+}

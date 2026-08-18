@@ -10,6 +10,24 @@ pipeline (raw to staging to warehouse to published), trains and evaluates models
 health systems under-perform relative to their spending, and serves the result over an API plus a
 country-to-region dashboard. It is built by a training cohort as a collaborative team project.
 
+## Cohort members: your task & how to contribute (read this first)
+
+**Full step-by-step: [`docs/CAPSTONE_ROADMAP.md`](docs/CAPSTONE_ROADMAP.md).**
+
+- **Your current task is spec [`002-country-health-model`](specs/002-country-health-model/spec.md)** —
+  it *is* the ML homework: pull the feature indicators, predict `life_expectancy`, compare
+  LinearRegression / DecisionTree / RandomForest / **XGBoost**, and produce a validated Pydantic
+  **Country Health Brief** (structured LLM output). If your research matches that, this is your spec.
+- **The scaffold is `backend/ml/`** — search for `STUDENT TODO`: add XGBoost + residuals in
+  `train.py`, and the Claude structured-output call in `brief.py`. Loop: `make ingest` → `make train`
+  → `make test`. Read the spec's Success Criteria before you start; your PR is judged against them.
+- **Git Flow to push your work:** `main` = released; **`develop`** = shared integration branch. Work
+  on **your own `XX-Dev` branch** (initials + `-Dev`, e.g. `SM-Dev`), cut from `develop`. Never commit
+  to `main`/`develop` directly. Push and open a PR **into `develop`**:
+  `git push -u origin <XX-Dev>` then `gh pr create --base develop --fill`.
+- Review gate: the spec's Success Criteria **and** the constitution — especially **honest modeling**
+  (a value-for-money benchmark, an association with spending, never a causal or blame claim).
+
 ## AI agent rules
 
 - Do NOT store project knowledge in personal/agent memory. Everything durable belongs in committed files.

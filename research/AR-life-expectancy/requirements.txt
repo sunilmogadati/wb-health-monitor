@@ -1,0 +1,10 @@
+wbgapi
+pandas
+numpy
+scikit-learn
+xgboost
+matplotlib
+pydantic
+langchain
+langchain-anthropic
+python-dotenv
