@@ -15,9 +15,11 @@ World Bank data, with an ML model, an AI layer, and an analytics dashboard on to
 1. **Spec-driven.** Every feature is a spec under `specs/NNN-name/`. The loop is:
    **constitution** (the rules) → **specify** (what) → **clarify** (resolve unknowns) →
    **plan** (how + research) → **tasks** (checklist) → **implement** → **review** → **merge**.
-2. **Branch → PR → merge.** Nobody commits to `main` directly. You branch per spec, open a Pull
-   Request, it's reviewed against the spec's Success Criteria **and** the constitution, then it's
-   squash-merged. That's how your work becomes part of the capstone.
+2. **Git Flow — branch → PR → merge.** `main` is the released line; **`develop`** is the shared
+   integration branch (seeded once from `main`). You work on **your own `XX-Dev` branch** (initials +
+   `-Dev`, e.g. `SM-Dev`) cut from `develop` — never commit to `main` or `develop` directly. Open a
+   Pull Request **into `develop`**, reviewed against the spec's Success Criteria **and** the
+   constitution, then merged. That's how your work becomes part of the capstone.
 3. **Two command families:** `/speckit.*` drives the spec loop; `make` drives the dev loop
    (see the cheat sheet at the bottom).
 
@@ -87,8 +89,9 @@ Your homework (predict `life_expectancy` from spending + context; compare LR/DT/
 "Country Health Brief" via Pydantic) becomes a real contribution here.
 
 ```bash
-git checkout main && git pull
-git checkout -b 002-country-health-model-<your-initials>
+git checkout develop && git pull                    # shared integration branch
+git checkout -b <YOUR-INITIALS>-Dev                 # your branch off develop, e.g. SM-Dev
+#   already have your branch?  git checkout <YOUR-INITIALS>-Dev && git merge develop
 pip install -e "backend[.ml]"          # pandas / scikit-learn / xgboost / joblib
 make ingest                            # ensure the feature indicators are loaded
 ```
@@ -101,11 +104,11 @@ Fill in the scaffold (search for `STUDENT TODO`):
 make train                             # trains, prints the metrics comparison, saves the winner
 make test                              # schema + honest-framing guards must pass
 git add -A && git commit -m "002: country health model + brief"
-git push -u origin 002-country-health-model-<your-initials>
-gh pr create --fill                    # or open the PR in the GitHub UI
+git push -u origin <YOUR-INITIALS>-Dev
+gh pr create --base develop --fill     # PR targets develop (or open it in the GitHub UI)
 ```
 **Done when:** all four models are compared, the brief is schema-valid, `make test` is green, and the
-PR is approved (spec Success Criteria + **no blame/causal language**, SC-006) and squash-merged.
+PR is approved (spec Success Criteria + **no blame/causal language**, SC-006) and merged into `develop`.
 
 ## Phase 5 — Warehouse / star schema (spec 003) ⬜
 
@@ -130,11 +133,11 @@ indicator trends. Spec `005-dashboard`.
 
 | Dev loop (`make`) | Spec loop (`/speckit`) | Git flow |
 |---|---|---|
-| `make up` / `down` | `/speckit.constitution` | `git checkout -b NNN-name-<initials>` |
+| `make up` / `down` | `/speckit.constitution` | `git checkout -b <INITIALS>-Dev` (off `develop`) |
 | `make migrate` | `/speckit.specify` | `git commit -m "NNN: ..."` |
-| `make ingest` | `/speckit.clarify` | `git push -u origin <branch>` |
-| `make train` | `/speckit.plan` | `gh pr create --fill` |
-| `make test` / `ci` | `/speckit.tasks` | review → **squash-merge** |
+| `make ingest` | `/speckit.clarify` | `git push -u origin <INITIALS>-Dev` |
+| `make train` | `/speckit.plan` | `gh pr create --base develop --fill` |
+| `make test` / `ci` | `/speckit.tasks` | review → **merge into `develop`** |
 
 ## Definition of done for ANY spec (the merge gate)
 
@@ -142,4 +145,4 @@ indicator trends. Spec `005-dashboard`.
 2. `make ci` is green (lint, types, tests).
 3. The constitution is honored — especially **honest modeling** (benchmark, association, never
    causation or blame).
-4. PR reviewed and approved, then **squash-merged** to `main`.
+4. PR reviewed and approved, then **merged into `develop`** — `main` stays the released, stable line.

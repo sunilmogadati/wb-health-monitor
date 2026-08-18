@@ -36,13 +36,15 @@ directly (no fork needed):
 ```bash
 git clone https://github.com/sunilmogadati/wb-health-monitor.git
 cd wb-health-monitor
-git checkout -b <YOUR-INITIALS>_Dev      # your personal working branch, e.g. SM_Dev
-git push -u origin <YOUR-INITIALS>_Dev
+git checkout develop && git pull                 # the shared integration branch
+git checkout -b <YOUR-INITIALS>-Dev              # your personal working branch, e.g. SM-Dev
+git push -u origin <YOUR-INITIALS>-Dev
 ```
 
-You do **all** your work on **your own `XX_Dev` branch** (your initials + `_Dev`) and open pull
-requests **into `main`**. `main` is the shared, always-working project — **never commit to it
-directly**. See *Before you open a pull request* below.
+We use **Git Flow**: `main` is the released, always-working line; **`develop`** is the shared
+integration branch (seeded once from `main`); you do **all** your work on **your own `XX-Dev` branch**
+(initials + `-Dev`), cut from `develop`, and open pull requests **into `develop`** — **never commit to
+`main` or `develop` directly**. See *Before you open a pull request* below.
 
 ### 2. Create your local `.env`
 
@@ -147,17 +149,17 @@ Edits to `backend/` reload automatically — the source is bind-mounted into the
 
 ## Before you open a pull request
 
-1. Keep your `XX_Dev` branch in sync with the shared project (do this often — it avoids a big merge at the end):
+1. Keep your `XX-Dev` branch in sync with the shared project (do this often — it avoids a big merge at the end):
    ```bash
-   git checkout main && git pull          # get everyone's merged work
-   git checkout XX_Dev && git merge main   # bring it into your branch
+   git checkout develop && git pull            # get everyone's merged work
+   git checkout XX-Dev && git merge develop     # bring it into your branch
    ```
 2. Write the **test first**, then the code (this project is test-driven — see the constitution).
 3. Run the full check locally and get it green:
    ```bash
    make ci
    ```
-4. Commit, push, and open a PR **into `main`**:
+4. Commit, push, and open a PR **into `develop`** (`gh pr create --base develop`):
    ```bash
    git commit -am "feat: <what you did>"
    git push
