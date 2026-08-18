@@ -4,7 +4,11 @@
 
 **Created**: 2026-08-18
 
-**Status**: Draft
+**Status**: Accepted (2026-08-18)
+
+**Clarifications (2026-08-18)**: FR-001 — retrieval uses a **SQL-tool agent** (question → parameterized
+SQL over the mart → rows); a vector/embedding index is an optional stretch, not required. Spec
+accepted — ready to implement.
 
 **Input**: Let a user ask a plain-English question about the health data and get a **grounded, cited**
 answer, using only the `published.country_year_indicators` mart. Retrieval + an LLM (Claude) turn the
@@ -38,10 +42,9 @@ passes without network/keys.
 
 ## Requirements *(mandatory)*
 
-- **FR-001**: Retrieval MUST run over `published.country_year_indicators` only — either a **SQL-tool
-  agent** (question → parameterized SQL → rows) or an **embedding/vector** index of country-year
-  summaries. [NEEDS CLARIFICATION: which approach — SQL-tool agent vs vector RAG. Recommendation:
-  SQL-tool agent first (the data is small, structured, and exact), vector RAG as a stretch.]
+- **FR-001**: Retrieval MUST run over `published.country_year_indicators` only, via a **SQL-tool
+  agent** (question → parameterized SQL → rows). A vector/embedding index is an optional stretch.
+  *(Clarified.)*
 - **FR-002**: The answer MUST be grounded in retrieved rows and MUST include **citations**
   (country, year, indicator, value) for every figure it states.
 - **FR-003**: A **no-hallucinated-numbers** guardrail MUST hold: any number in the answer traces to a
