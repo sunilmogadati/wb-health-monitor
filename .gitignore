@@ -37,5 +37,10 @@ scratch/
 backend/data/
 backend/models/
 
+# --- ML / vector-store binaries anywhere (regenerated from code; never commit) ---
+*.joblib
+chroma*/
+*.sqlite3
+
 # --- per-developer volatile handoff (template is committed) ---
 .specify/memory/session-state.md
