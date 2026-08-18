@@ -16,7 +16,7 @@ COMPOSE := docker compose -f compose.yaml $(if $(ENV_FILE),--env-file .env,)
 EXEC_API := $(COMPOSE) exec -T api
 
 .DEFAULT_GOAL := help
-.PHONY: help up down logs ps shell migrate migrate-down ingest train test lint typecheck format-check format ci clean
+.PHONY: help up down logs ps shell migrate migrate-down ingest train dbt-build test lint typecheck format-check format ci clean
 
 help: ## Show every target with its purpose
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -57,6 +57,9 @@ ingest: ## Pull WB WDI data on the host, load it into Postgres, and log the run
 
 train: ## Train & compare models on the host (spec 002; needs: pip install -e "backend[.ml]")
 	cd backend && python3 -m ml.train
+
+dbt-build: ## Build warehouse + published models and run tests (spec 003; needs backend[.warehouse])
+	cd backend/dbt && dbt build --profiles-dir .
 
 # --- Checks ----------------------------------------------------------------
 # Run the same tools CI runs, against the same config. Point RUN at a container wrapper (e.g.
