@@ -32,6 +32,12 @@ ml = [
 warehouse = [
   "dbt-postgres>=1.7,<2",
 ]
+# LLM / agent deps for the Claude brief (spec 002) and RAG insights (spec 004).
+ai = [
+  "anthropic>=0.40",
+  "langchain>=0.3",
+  "langchain-anthropic>=0.3",
+]
 
 [build-system]
 requires = ["setuptools>=69"]
