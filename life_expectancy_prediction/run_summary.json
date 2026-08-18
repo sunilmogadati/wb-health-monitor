@@ -1,0 +1,62 @@
+{
+  "feature_cols": [
+    "health_spend_pct_gdp",
+    "gdp_per_capita",
+    "internet_pct",
+    "fertility_rate"
+  ],
+  "target_col": "life_expectancy",
+  "n_train": 167,
+  "n_test": 42,
+  "best_model": "Random Forest",
+  "results": [
+    {
+      "model": "Random Forest",
+      "r2": 0.8392768884526411,
+      "rmse": 3.0450584595801624,
+      "mae": 2.3725729339917243,
+      "needs_scaling": false
+    },
+    {
+      "model": "KNN",
+      "r2": 0.8238462068373791,
+      "rmse": 3.187883696053891,
+      "mae": 2.5335728248042226,
+      "needs_scaling": true
+    },
+    {
+      "model": "AdaBoost",
+      "r2": 0.8155002215289822,
+      "rmse": 3.2625290953742767,
+      "mae": 2.454461454204574,
+      "needs_scaling": false
+    },
+    {
+      "model": "Linear Regression",
+      "r2": 0.811866603553427,
+      "rmse": 3.294499279690442,
+      "mae": 2.6552829491492793,
+      "needs_scaling": false
+    },
+    {
+      "model": "XGBoost",
+      "r2": 0.7729720064320581,
+      "rmse": 3.619063259007397,
+      "mae": 2.8003059274130595,
+      "needs_scaling": false
+    },
+    {
+      "model": "Decision Tree",
+      "r2": 0.7020180892175943,
+      "rmse": 4.1462111886163004,
+      "mae": 3.0511197613738736,
+      "needs_scaling": false
+    }
+  ],
+  "feature_importances": {
+    "health_spend_pct_gdp": 0.04980224252546971,
+    "gdp_per_capita": 0.35504785361264807,
+    "internet_pct": 0.12979110969524763,
+    "fertility_rate": 0.46535879416663467
+  }
+}
