@@ -21,14 +21,14 @@ dev = [
   "mypy==1.14.0",
   "ruff==0.8.4",
 ]
-# Modeling deps for spec 002 (ml.train). Run training on the host: pip install -e "backend[.ml]"
+# Modeling deps for spec 002 (ml.train). Run training on the host: pip install -e "backend[ml]"
 ml = [
   "pandas>=2.0",
   "scikit-learn>=1.4",
   "xgboost>=2.0",
   "joblib>=1.3",
 ]
-# Warehouse transform deps for spec 003 (dbt). Run on the host: pip install -e "backend[.warehouse]"
+# Warehouse transform deps for spec 003 (dbt). Run on the host: pip install -e "backend[warehouse]"
 warehouse = [
   "dbt-postgres>=1.7,<2",
 ]

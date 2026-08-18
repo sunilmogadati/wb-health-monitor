@@ -55,10 +55,10 @@ ingest: ## Pull WB WDI data on the host, load it into Postgres, and log the run
 	python3 backend/scripts/pull_wdi.py
 	$(EXEC_API) python /workspace/backend/scripts/load_wdi.py
 
-train: ## Train & compare models on the host (spec 002; needs: pip install -e "backend[.ml]")
+train: ## Train & compare models on the host (spec 002; needs: pip install -e "backend[ml]")
 	cd backend && python3 -m ml.train
 
-dbt-build: ## Build warehouse + published models and run tests (spec 003; needs backend[.warehouse])
+dbt-build: ## Build warehouse + published models and run tests (spec 003; needs backend[warehouse])
 	cd backend/dbt && dbt build --profiles-dir .
 
 # --- Checks ----------------------------------------------------------------

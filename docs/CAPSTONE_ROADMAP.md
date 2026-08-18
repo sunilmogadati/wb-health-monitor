@@ -92,7 +92,7 @@ Your homework (predict `life_expectancy` from spending + context; compare LR/DT/
 git checkout develop && git pull                    # shared integration branch
 git checkout -b <YOUR-INITIALS>-Dev                 # your branch off develop, e.g. SM-Dev
 #   already have your branch?  git checkout <YOUR-INITIALS>-Dev && git merge develop
-pip install -e "backend[.ml]"          # pandas / scikit-learn / xgboost / joblib
+pip install -e "backend[ml]"          # pandas / scikit-learn / xgboost / joblib
 make ingest                            # ensure the feature indicators are loaded
 ```
 Fill in the scaffold (search for `STUDENT TODO`):
@@ -116,7 +116,7 @@ Turns `staging` into a conformed dimensional model with **dbt**: `dim_country`, 
 `dim_year`, `fact_indicator` (warehouse schema) and `country_year_indicators` (published mart).
 
 ```bash
-pip install -e "backend[.warehouse]"    # dbt-postgres
+pip install -e "backend[warehouse]"    # dbt-postgres
 make dbt-build                          # builds staging -> warehouse -> published, runs the tests
 docker compose exec db psql -U wbhealth -d wbhealth \
   -c "select * from published.country_year_indicators where country_code='NGA' order by year desc limit 5;"
