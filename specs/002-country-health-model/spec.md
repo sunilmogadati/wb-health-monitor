@@ -1,0 +1,134 @@
+# Feature Specification: Country Health Model & Brief
+
+**Feature Branch**: `002-country-health-model`
+
+**Created**: 2026-08-18
+
+**Status**: Draft
+
+**Input**: Predict a country's **life expectancy** from health spending and context features, compare
+several models honestly, and turn the result for one country into a structured **Country Health
+Brief** produced by an LLM with **validated (Pydantic) output**. This is the capstone's first
+modeling + AI slice; it reads the governed data landed by `001-wdi-ingestion`.
+
+> **Constitution alignment:** Principle I (public WB data only, no keys), Principle II (tests before
+> code), Principle V (**Honest Modeling** — this is a *value-for-money benchmark*, association not
+> causation; no country is "failing" — residuals flag over/under-performance **relative to spend**),
+> Principle VI (reproducible, containerized, deterministic seed).
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 — Feature set for modeling (Priority: P1)
+
+An analyst needs one tidy country-year table with the **target** (`life_expectancy`) and the
+**features**: `health_spend_pct_gdp`, `gdp_per_capita`, `internet_pct`, `fertility_rate` (context
+proxies for wealth, development, and demographics). This extends ingestion to pull the additional
+indicators and shapes them into a model-ready feature table.
+
+**Why this priority**: no honest model exists without the target and a defensible feature set.
+
+**Acceptance**:
+1. **Given** the pipeline has run, **When** the analyst queries the feature table, **Then** each row
+   is one country-year with the target and all four features, nulls handled explicitly (dropped or
+   imputed — the choice is documented).
+2. **Given** a country-year is missing the target, **When** the table is built, **Then** that row is
+   excluded from training data (and the exclusion count is reported).
+
+### User Story 2 — Train and compare models (Priority: P1)
+
+A data scientist trains and **evaluates multiple models** — Linear Regression, Decision Tree, Random
+Forest, XGBoost — on a train/test split, reports comparable metrics, and picks a winner with reasons.
+
+**Acceptance**:
+1. **Given** the feature table, **When** training runs, **Then** all four models are fit on the same
+   train split and scored on the same held-out test split with the same metrics (R², MAE, RMSE).
+2. **Given** the scored models, **When** results are reported, **Then** a comparison table names the
+   selected model and a one-line rationale (accuracy vs interpretability trade-off).
+3. **Given** a fixed random seed, **When** training re-runs, **Then** results are reproducible.
+4. **Given** the winning model, **When** residuals are computed, **Then** each country's residual
+   (actual − predicted life expectancy) is available as its **over/under-performance vs spend**
+   signal — **framed as association, never causation** (Principle V).
+
+### User Story 3 — Country Health Brief (structured LLM output) (Priority: P2)
+
+For a chosen country, an LLM produces a **Country Health Brief** as a **validated Pydantic object**
+(not free text): the key indicators, the model's prediction vs actual, the residual interpretation,
+and a short plain-language summary — grounded only in the supplied data, no invented facts.
+
+**Acceptance**:
+1. **Given** a country's features + model output, **When** the brief is generated, **Then** the
+   response is parsed into the `CountryHealthBrief` Pydantic model or the call fails loudly (no
+   silent free-text fallback).
+2. **Given** the brief, **When** it is read, **Then** every number in it traces to the input data;
+   the summary states the value-for-money framing and makes **no causal or ranking-as-blame claim**.
+3. **Given** no LLM API key, **When** the brief runs, **Then** it degrades to a deterministic
+   template brief from the same fields (so CI and offline dev still pass).
+
+### Edge Cases
+
+- Indicators with sparse coverage (e.g. `uhc_index`) are **excluded** as features unless coverage is
+  adequate — document the coverage threshold used.
+- Countries with too few years / missing features are excluded from training but may still receive a
+  brief marked "insufficient data".
+- Currency/scale of `gdp_per_capita` is documented (constant vs current US$).
+
+## Requirements *(mandatory)*
+
+- **FR-001**: Ingestion MUST be extended to pull `NY.GDP.PCAP.CD` (gdp_per_capita), `IT.NET.USER.ZS`
+  (internet_pct), `SP.DYN.TFRT.IN` (fertility_rate) alongside the existing indicators, via `wbgapi`,
+  public data only.
+- **FR-002**: A **feature table** (country-year → target + 4 features) MUST be produced from the
+  governed data, with an explicit, documented null-handling policy.
+- **FR-003**: The system MUST train Linear Regression, Decision Tree, Random Forest, and XGBoost on a
+  shared train/test split with a fixed seed.
+- **FR-004**: The system MUST report R², MAE, and RMSE per model and select a winner with a recorded
+  rationale.
+- **FR-005**: The system MUST compute and persist per-country residuals as the value-for-money
+  (over/under-performance-vs-spend) signal.
+- **FR-006**: The trained winning model MUST be saved as an artifact (joblib) for reuse [NEEDS
+  CLARIFICATION: artifact location — local `models/` dir vs MinIO `raw`/`published` bucket].
+- **FR-007**: A `CountryHealthBrief` **Pydantic** schema MUST define the brief; LLM output MUST be
+  validated against it (structured output / `.parse`), no unvalidated free text.
+- **FR-008**: The brief generator MUST have a deterministic no-API-key fallback so tests run offline.
+- **FR-009**: All modeling claims MUST use association/benchmark language (Principle V). No causal or
+  blame framing anywhere in code, output, or docs.
+- **FR-010**: The feature build + training MUST run reproducibly in the container with tests
+  (Principle II/VI) — at minimum a smoke test that the pipeline fits and scores on a small fixture.
+
+### Key Entities
+
+- **Feature row**: `country_code, country_name, year, life_expectancy (target), health_spend_pct_gdp,
+  gdp_per_capita, internet_pct, fertility_rate`.
+- **Model comparison**: `model_name, r2, mae, rmse, selected (bool), rationale`.
+- **Residual**: `country_code, year, actual, predicted, residual` (residual = value-for-money signal).
+- **CountryHealthBrief** (Pydantic): `country_code, country_name, year, indicators{...},
+  predicted_life_expectancy, actual_life_expectancy, residual, performance_vs_spend (enum:
+  above/near/below expected), summary (str, grounded)`.
+
+## Success Criteria *(mandatory)*
+
+- **SC-001**: `make ingest` lands all target + feature indicators; the feature table is queryable.
+- **SC-002**: One command trains all four models and prints a metrics comparison table with a
+  selected winner.
+- **SC-003**: Residuals are persisted and queryable per country-year.
+- **SC-004**: Requesting a brief for a country returns a schema-valid `CountryHealthBrief`; with no
+  API key it returns the deterministic template brief.
+- **SC-005**: The whole slice runs in the container and its tests pass in CI.
+- **SC-006**: No causal/blame language appears anywhere (reviewer checklist item).
+
+## Out of Scope
+
+- The warehouse star schema (separate spec) — this slice may read `staging.wdi_observation` (extended)
+  directly.
+- The interactive dashboard and any agentic/RAG natural-language querying (later specs).
+- Hyperparameter tuning beyond sensible defaults; time-series forecasting.
+
+## How the homework maps to the SDD phases
+
+- **Research/Plan** (`/speckit.plan`): which features actually help, coverage thresholds, which model
+  wins and why → `research.md` + `plan.md`. *This is the "research" part of the assignment.*
+- **Tasks** (`/speckit.tasks`): ingestion extension → feature table → training/eval → residuals →
+  Pydantic brief → tests.
+- **Implement**: the code the students already wrote, moved into the repo structure and made to read
+  the governed data + run in the container.
+- **Review**: honest-modeling check, tests green, PR approved, merge.

@@ -6,8 +6,7 @@ Bump rationale: Initial constitution for the wb-health-monitor capstone, authore
   approved Project Brief's non-negotiables. Replaces the Spec-Kit example constitution that
   ships in the starter. MAJOR baseline — establishes binding governance where none existed.
 
-Status: INITIAL DRAFT — authored for the cohort to review and ratify in the kickoff session
-  via /speckit.constitution. Principles are stable; wording is open to refinement.
+Status: RATIFIED 1.0.0 — reviewed and adopted by the cohort in the kickoff session (2026-08-18).
 
 Principles defined:
   I.   Public Data Only (NON-NEGOTIABLE)
@@ -143,4 +142,4 @@ This constitution supersedes ad-hoc convention where they conflict.
 - **Compliance review.** Every PR verifies compliance with these principles; any deviation MUST
   be justified in-PR. Unjustified violations block merge.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-17 (initial draft — pending cohort ratification) | **Last Amended**: 2026-08-17
+**Version**: 1.0.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18

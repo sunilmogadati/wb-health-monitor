@@ -33,5 +33,9 @@ explore_wb.py
 wb_health_sample.csv
 scratch/
 
+# --- generated data & model artifacts (regenerated via `make ingest` / `make train`) ---
+backend/data/
+backend/models/
+
 # --- per-developer volatile handoff (template is committed) ---
 .specify/memory/session-state.md

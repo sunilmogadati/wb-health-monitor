@@ -16,7 +16,7 @@ COMPOSE := docker compose -f compose.yaml $(if $(ENV_FILE),--env-file .env,)
 EXEC_API := $(COMPOSE) exec -T api
 
 .DEFAULT_GOAL := help
-.PHONY: help up down logs ps shell migrate migrate-down test lint typecheck format-check format ci clean
+.PHONY: help up down logs ps shell migrate migrate-down ingest train test lint typecheck format-check format ci clean
 
 help: ## Show every target with its purpose
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -48,6 +48,15 @@ migrate: ## Apply every migration to head
 
 migrate-down: ## Reverse the most recent migration
 	$(EXEC_API) alembic downgrade -1
+
+# --- Data pipeline ---------------------------------------------------------
+
+ingest: ## Pull WB WDI data on the host, load it into Postgres, and log the run
+	python3 backend/scripts/pull_wdi.py
+	$(EXEC_API) python /workspace/backend/scripts/load_wdi.py
+
+train: ## Train & compare models on the host (spec 002; needs: pip install -e "backend[.ml]")
+	cd backend && python3 -m ml.train
 
 # --- Checks ----------------------------------------------------------------
 # Run the same tools CI runs, against the same config. Point RUN at a container wrapper (e.g.
