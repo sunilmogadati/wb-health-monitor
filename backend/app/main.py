@@ -173,7 +173,7 @@ def create_app() -> FastAPI:
         redoc_url=f"{API_V1_PREFIX}/redoc",
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
-    # CORS so the Next.js/React dashboard (spec 005) can call the API from its own origin.
+    # CORS so the Next.js/React dashboard (spec 006) can call the read API (spec 005) from its origin.
     origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
     if origins:
         app.add_middleware(
