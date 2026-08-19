@@ -4,7 +4,11 @@
 
 **Created**: 2026-08-18
 
-**Status**: Draft
+**Status**: Accepted (2026-08-18)
+
+**Clarifications (2026-08-18)**: FR-009 — the transform tool is **dbt** (`dbt-postgres`), with
+`staging -> warehouse -> published` models, run on the host via `make dbt-build`. Chosen to teach the
+standard tool and match the EMET pattern.
 
 **Input**: Turn the flat `staging.wdi_observation` into a **conformed dimensional model** (Kimball star
 schema) in a `warehouse` schema, and expose a clean `published` mart that the model (spec 002) and the

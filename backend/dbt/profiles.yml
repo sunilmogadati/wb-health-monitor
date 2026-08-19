@@ -1,0 +1,14 @@
+# dbt connection. Runs on the HOST and connects to the Postgres container's mapped port on
+# localhost. Defaults match the repo .env; override via env vars if you changed them.
+wb_health_monitor:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_PGHOST', 'localhost') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      user: "{{ env_var('POSTGRES_USER', 'wbhealth') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'wbhealth_local_dev') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'wbhealth') }}"
+      schema: public
+      threads: 4

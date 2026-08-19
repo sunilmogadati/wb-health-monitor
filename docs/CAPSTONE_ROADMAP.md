@@ -34,7 +34,7 @@ World Bank data, with an ML model, an AI layer, and an analytics dashboard on to
 | 2 | Ratify the constitution | 🧑‍🏫 | ✅ v1.0.0 |
 | 3 | Accept the specs (001, 002) | 🧑‍🏫 | ▶️ **next** |
 | 4 | ML homework → spec 002 (models + brief) | 👤 | ▶️ **now** |
-| 5 | Warehouse / star schema (spec 003) | 👤 | ⬜ |
+| 5 | Warehouse / star schema (spec 003) | 👤 | ✅ works (`make dbt-build`) |
 | 6 | AI layer — RAG / NL query (spec 004) | 👤 | ⬜ |
 | 7 | Analytics dashboard (spec 005) | 👤 | ⬜ |
 
@@ -92,7 +92,7 @@ Your homework (predict `life_expectancy` from spending + context; compare LR/DT/
 git checkout develop && git pull                    # shared integration branch
 git checkout -b <YOUR-INITIALS>-Dev                 # your branch off develop, e.g. SM-Dev
 #   already have your branch?  git checkout <YOUR-INITIALS>-Dev && git merge develop
-pip install -e "backend[.ml]"          # pandas / scikit-learn / xgboost / joblib
+pip install -e "backend[ml]"          # pandas / scikit-learn / xgboost / joblib
 make ingest                            # ensure the feature indicators are loaded
 ```
 Fill in the scaffold (search for `STUDENT TODO`):
@@ -110,11 +110,21 @@ gh pr create --base develop --fill     # PR targets develop (or open it in the G
 **Done when:** all four models are compared, the brief is schema-valid, `make test` is green, and the
 PR is approved (spec Success Criteria + **no blame/causal language**, SC-006) and merged into `develop`.
 
-## Phase 5 — Warehouse / star schema (spec 003) ⬜
+## Phase 5 — Warehouse / star schema (spec 003) ✅
 
-Turn `staging` into a conformed dimensional model: `dim_country`, `dim_indicator`, `dim_year`,
-`fact_indicator`. Delivered as an Alembic migration + dbt models (`staging → warehouse → published`).
-Start with `/speckit.specify` for `003-warehouse-star-schema`.
+Turns `staging` into a conformed dimensional model with **dbt**: `dim_country`, `dim_indicator`,
+`dim_year`, `fact_indicator` (warehouse schema) and `country_year_indicators` (published mart).
+
+```bash
+pip install -e "backend[warehouse]"    # dbt-postgres
+make dbt-build                          # builds staging -> warehouse -> published, runs the tests
+docker compose exec db psql -U wbhealth -d wbhealth \
+  -c "select * from published.country_year_indicators where country_code='NGA' order by year desc limit 5;"
+```
+
+dbt project lives in `backend/dbt/` (models under `models/{warehouse,published}/`, tests inline +
+`tests/`). The `published` mart is the single read surface for the model (spec 002) and dashboard
+(spec 005).
 
 ## Phase 6 — AI layer: RAG / natural-language query (spec 004) ⬜
 
