@@ -12,6 +12,26 @@ import psycopg
 
 CSV = Path("/workspace/backend/data/wdi_observation.csv")
 YEAR_FROM, YEAR_TO = 2015, 2022
+RAW_BUCKET = os.environ.get("S3_BUCKET_RAW", "raw")
+
+
+def _land_raw(csv_path: Path, pull_id: int) -> str:
+    """Upload the raw pull to the MinIO `raw` zone (immutable bronze); return its s3:// key."""
+    import boto3
+
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=os.environ.get("S3_ENDPOINT_URL", "http://minio:9000"),
+        aws_access_key_id=os.environ.get("S3_ACCESS_KEY", "wbhealth"),
+        aws_secret_access_key=os.environ.get("S3_SECRET_KEY", "wbhealth_local_dev"),
+    )
+    try:
+        s3.head_bucket(Bucket=RAW_BUCKET)
+    except Exception:
+        s3.create_bucket(Bucket=RAW_BUCKET)
+    key = f"world_bank_wdi/pull_{pull_id}/wdi_observation.csv"
+    s3.upload_file(str(csv_path), RAW_BUCKET, key)
+    return f"s3://{RAW_BUCKET}/{key}"
 
 
 def main() -> None:
@@ -37,13 +57,20 @@ def main() -> None:
 
         cur.execute(
             """INSERT INTO ingestion.pull_log
-                 (source_id, indicators, economies, object_keys, year_from, year_to,
+                 (source_id, indicators, economies, year_from, year_to,
                   rows_fetched, status, started_at)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, 'running', now())
+               VALUES (%s, %s, %s, %s, %s, %s, 'running', now())
                RETURNING pull_id""",
-            (source_id, indicators, ["SSF"], [str(CSV)], YEAR_FROM, YEAR_TO, len(rows)),
+            (source_id, indicators, ["SSF"], YEAR_FROM, YEAR_TO, len(rows)),
         )
         pull_id = cur.fetchone()[0]
+
+        # Land the raw pull in the MinIO `raw` zone (bronze), then record its object key.
+        object_key = _land_raw(CSV, pull_id)
+        cur.execute(
+            "UPDATE ingestion.pull_log SET object_keys = %s WHERE pull_id = %s",
+            ([object_key], pull_id),
+        )
 
         cur.execute("CREATE SCHEMA IF NOT EXISTS staging")
         cur.execute(
