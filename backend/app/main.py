@@ -17,6 +17,8 @@ from ml.brief import CountryHealthBrief, build_brief
 from ml.features import FEATURES, TARGET, connect, country_year_row
 from pydantic import BaseModel
 
+from app.ask import router as ask_router
+
 API_V1_PREFIX = "/api/v1"
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
 MODEL_PATH = MODELS_DIR / "life_expectancy.joblib"
@@ -170,6 +172,7 @@ def create_app() -> FastAPI:
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
     app.include_router(router, prefix=API_V1_PREFIX)
+    app.include_router(ask_router, prefix=API_V1_PREFIX)
     return app
 
 

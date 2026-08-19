@@ -25,7 +25,7 @@ ignore = [
 # `alembic` is a third-party library; the backend/alembic/ directory would otherwise make ruff infer
 # it as first-party.
 known-third-party = ["alembic"]
-known-first-party = ["app", "tests"]
+known-first-party = ["app", "ai", "tests"]
 
 [format]
 quote-style = "double"
