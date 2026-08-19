@@ -7,12 +7,14 @@ process before uvicorn binds a port, rather than failing on the first request. T
 
 from __future__ import annotations
 
+import os
 import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from ml.brief import CountryHealthBrief, build_brief
 from ml.features import FEATURES, TARGET, connect, country_year_row
 from pydantic import BaseModel
@@ -171,6 +173,16 @@ def create_app() -> FastAPI:
         redoc_url=f"{API_V1_PREFIX}/redoc",
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
+    # CORS so the Next.js/React dashboard (spec 005) can call the API from its own origin.
+    origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET"],
+            allow_headers=["*"],
+        )
+
     app.include_router(router, prefix=API_V1_PREFIX)
     app.include_router(ask_router, prefix=API_V1_PREFIX)
     return app
