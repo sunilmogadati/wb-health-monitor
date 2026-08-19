@@ -19,7 +19,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 
@@ -122,7 +122,7 @@ def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
         "seed": SEED,
         "selected_model": winner,
         "selection_rationale": (
-            "lowest held-out RMSE on the shared seeded split; residuals are a "
+            "lowest 5-fold cross-validated RMSE (robust to a single split); residuals are a "
             "value-for-money benchmark, not a causal claim"
         ),
         "models": comparison.to_dict(orient="records"),
@@ -133,37 +133,49 @@ def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
 def main() -> None:
     df = load_frame()
     feature_frame, target = df[FEATURES], df[TARGET]
+
+    # Model SELECTION uses 5-fold cross-validated RMSE — robust to a single lucky/unlucky split,
+    # which matters on a small dataset (~357 rows). A held-out split is also reported for context.
+    cv = KFold(n_splits=5, shuffle=True, random_state=SEED)
     features_train, features_test, target_train, target_test = train_test_split(
         feature_frame, target, test_size=0.2, random_state=SEED
     )
 
-    rows, fitted = [], {}
+    rows = []
     for name, model in candidate_models().items():
+        neg_mse = cross_val_score(
+            model, feature_frame, target, cv=cv, scoring="neg_mean_squared_error", n_jobs=1
+        )
+        cv_rmse = (-neg_mse) ** 0.5
         model.fit(features_train, target_train)
         pred = model.predict(features_test)
         rows.append(
             {
                 "model": name,
-                "r2": round(r2_score(target_test, pred), 3),
-                "mae": round(mean_absolute_error(target_test, pred), 2),
-                "rmse": round(mean_squared_error(target_test, pred) ** 0.5, 2),
+                "cv_rmse": round(float(cv_rmse.mean()), 2),
+                "cv_rmse_std": round(float(cv_rmse.std()), 2),
+                "test_r2": round(r2_score(target_test, pred), 3),
+                "test_rmse": round(mean_squared_error(target_test, pred) ** 0.5, 2),
             }
         )
-        fitted[name] = model
 
-    table = pd.DataFrame(rows).sort_values("rmse").reset_index(drop=True)
+    table = pd.DataFrame(rows).sort_values("cv_rmse").reset_index(drop=True)
     print(table.to_string(index=False))
 
     winner = table.iloc[0]["model"]
-    print(f"\nselected: {winner}  (lowest RMSE; weigh accuracy vs interpretability, FR-004)")
+    print(f"\nselected: {winner}  (lowest 5-fold CV RMSE — robust to a single split, FR-004)")
+
+    # Fit the winner on ALL rows for the deployed artifact + residuals (best use of a small dataset).
+    final_model = candidate_models()[winner]
+    final_model.fit(feature_frame, target)
 
     MODELS_DIR.mkdir(exist_ok=True)
-    joblib.dump(fitted[winner], MODEL_PATH)
+    joblib.dump(final_model, MODEL_PATH)
     save_metadata(table, winner)
     print(f"saved -> {MODEL_PATH}")
     print(f"metadata -> {METADATA_PATH}")
 
-    all_predictions = fitted[winner].predict(feature_frame)
+    all_predictions = final_model.predict(feature_frame)
     residual_count = persist_residuals(df, all_predictions, winner)
     print(f"published residuals -> published.model_residual ({residual_count} rows)")
 
