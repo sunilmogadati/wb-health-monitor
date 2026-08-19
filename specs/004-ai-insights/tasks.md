@@ -24,4 +24,4 @@
 - [ ] **T009** `make test` green.
 
 ## Phase 7 — Ship
-- [ ] **T010** PR into `develop`; instructor reviews against the spec's Success Criteria.
+- [ ] **T010** PR into `develop`; maintainer reviews against the spec's Success Criteria.

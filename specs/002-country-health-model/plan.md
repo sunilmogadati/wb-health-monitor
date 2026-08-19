@@ -1,6 +1,6 @@
 # Implementation Plan: Country Health Model & Brief (spec 002)
 
-**Status**: For review · **Spec**: `spec.md` (Accepted) · **Author**: instructor
+**Status**: For review · **Spec**: `spec.md` (Accepted) · **Author**: maintainer
 
 ## Summary
 

@@ -24,4 +24,4 @@
 - [ ] **T011** `make train` and `make test` green; confirm no causal/blame language (SC-006).
 
 ## Phase 6 — Ship
-- [ ] **T012** PR into `develop`; instructor reviews against the spec's Success Criteria.
+- [ ] **T012** PR into `develop`; maintainer reviews against the spec's Success Criteria.

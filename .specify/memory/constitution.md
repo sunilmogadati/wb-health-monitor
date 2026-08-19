@@ -2,11 +2,11 @@
 SYNC IMPACT REPORT
 ==================
 Version change: (stamped placeholder) → 1.0.0
-Bump rationale: Initial constitution for the wb-health-monitor capstone, authored from the
+Bump rationale: Initial constitution for the wb-health-monitor platform, authored from the
   approved Project Brief's non-negotiables. Replaces the Spec-Kit example constitution that
   ships in the starter. MAJOR baseline — establishes binding governance where none existed.
 
-Status: RATIFIED 1.0.0 — reviewed and adopted by the cohort in the kickoff session (2026-08-18).
+Status: RATIFIED 1.0.0 — reviewed and adopted by the team (2026-08-18).
 
 Principles defined:
   I.   Public Data Only (NON-NEGOTIABLE)
@@ -21,7 +21,7 @@ Added sections:
   - Development Workflow & Quality Gates
   - Governance
 
-Follow-up TODOs: cohort ratification; confirm the compliance regime (ai-security) at stamp
+Follow-up TODOs: confirm the compliance regime (ai-security) at stamp
   config; add a web-service section if the dashboard is built as a separate Next.js service.
 -->
 
@@ -98,7 +98,7 @@ Anyone can run the whole thing from a clean clone.
 - **One-command dev loop.** The full stack comes up via `docker compose` / `make up`, with the
   source bind-mounted at `/workspace`. A `curl /health` check passes before the UI is opened.
 - **Deployed prototype.** The model ships behind **FastAPI** (`/api`, `/health`, `/metrics`)
-  and/or a dashboard — the official capstone deliverable.
+  and/or a dashboard — the platform deliverable.
 - **Documented.** README + architecture docs stay in sync with behavior; the demo is
   reproducible.
 

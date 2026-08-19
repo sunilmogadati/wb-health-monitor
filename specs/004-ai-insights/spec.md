@@ -77,7 +77,7 @@ passes without network/keys.
 
 ## Notes for the plan phase
 
-- Reuse the structured-output pattern from `backend/ml/brief.py`. The cohort's RAG research
+- Reuse the structured-output pattern from `backend/ml/brief.py`. The RAG research
   (`research/AR-life-expectancy/`) is a reference starting point.
 - Start with the SQL-tool-agent approach (exact, cheap on this small mart); a vector index is a
   stretch once the SQL path works.

@@ -5,7 +5,7 @@ benchmarking tool: it ingests World Development Indicators, curates them through
 pipeline, trains and evaluates models that surface where health systems under-perform relative to
 their spending, and serves the result over an API plus a country-to-region dashboard.
 
-Built by the training cohort as a collaborative team project.
+A collaborative team project.
 
 > **Where does the data come from, and what's MinIO?** See **[`docs/data-and-storage.md`](docs/data-and-storage.md)** — the World Bank data source (`wbgapi`) and how storage works (MinIO object store + Postgres warehouse).
 
@@ -178,7 +178,7 @@ This project follows **Spec-Driven Development** (GitHub Spec Kit). The flow is
 - **The commands:** `.claude/commands/` — `speckit.*` (the lifecycle), `rpi` (deep per-task loop),
   and `csi.*` (project gates like `preflight`, `status`, `feature-exit`).
 
-*(The methodology is walked through in the cohort session.)*
+*(The methodology is documented in the specs.)*
 
 ---
 
@@ -208,4 +208,4 @@ docs/             data-and-storage.md (data source + MinIO) · adr/ (decisions)
 | Want a completely fresh database | `make down` deletes the DB volume; `make up` starts empty. |
 | `DATABASE_URL is not set` when running `make migrate` | Ensure `DATABASE_URL` is filled in your `.env` (see step 2). |
 
-Stuck for more than 15 minutes? Post in the cohort channel with the exact command and the error output.
+Stuck for more than 15 minutes? Open an issue with the exact command and the error output.

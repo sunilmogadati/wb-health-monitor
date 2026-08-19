@@ -84,9 +84,9 @@ downstream.
 - **FR-005**: System MUST be runnable as a single command (e.g. `make ingest`) and configurable (which indicators, economies, years) **without code changes**.
 - **FR-006**: System MUST validate a pull before marking it `succeeded`: the result is non-empty and has the expected shape (economy, indicator, year, value). A failed validation marks the run `failed` and does not mark the data usable.
 - **FR-007**: System MUST require **no credentials** for the World Bank source (public data), and MUST write World Bank data to **no store other than** the `raw` bucket and `pull_log` (zone discipline).
-- **FR-008**: The default economy scope is [NEEDS CLARIFICATION: all countries, or one WB region (e.g. Sub-Saharan Africa) for the teaching build?].
+- **FR-008**: The default economy scope is [NEEDS CLARIFICATION: all countries, or one WB region (e.g. Sub-Saharan Africa) for the initial build?].
 - **FR-009**: The default year range is [NEEDS CLARIFICATION: e.g. 2000 through the latest available year?].
-- **FR-010**: Ingest cadence is [NEEDS CLARIFICATION: on-demand only for the capstone, or also scheduled?].
+- **FR-010**: Ingest cadence is [NEEDS CLARIFICATION: on-demand only for now, or also scheduled?].
 - **FR-011**: Ingestion MUST be driven by a **source registry** (`ingestion.data_sources`): each run resolves a **registered, active** source, and every `pull_log` row references it (`source_id`) — so ingestion is config-driven and every run traces to its source (provenance). Adding a public source is a registry row, not a code change (realizes FR-005). The registry holds **no credentials** (FR-007); auth-bearing sources are out of scope (public data only, Principle I).
 
 ### Key Entities *(include if feature involves data)*
