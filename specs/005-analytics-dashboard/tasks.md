@@ -8,9 +8,9 @@
 - [ ] **T003** `GET /api/v1/compare?countries=&indicator=` — several countries, one indicator. (FR-001)
 - [ ] **T004** `GET /api/v1/benchmark?year=` — countries ranked by residual from `published.model_residual`; return a "model not built" payload if the table is absent. (FR-001/FR-004)
 
-## Phase 2 — Dashboard UI
-- [ ] **T005** Serve a `/dashboard` page (HTML + chart lib) that calls the API. (FR-002/FR-007)
-- [ ] **T006** Render three charts: value-for-money **benchmark**, indicator **trend**, country **compare**. Labels say "vs what spending predicts"; bands above/near/below (no best/worst). (FR-002/FR-003)
+## Phase 2 — Dashboard UI (React / Next.js / Tailwind)
+- [ ] **T005** Scaffold a **Next.js (App Router)** app in `frontend/` with **Tailwind CSS** + a typed API client for the read endpoints; add the frontend origin to `CORS_ALLOWED_ORIGINS`. (FR-007)
+- [ ] **T006** Build three chart components (React chart lib — Recharts / Tremor): value-for-money **benchmark**, indicator **trend**, country **compare**. Labels say "vs what spending predicts"; bands above/near/below (no best/worst). (FR-002/FR-003)
 - [ ] **T007** Benchmark shows the graceful "model not built yet" state when residuals are absent. (FR-004)
 
 ## Phase 3 — Tests & gate

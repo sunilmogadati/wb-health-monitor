@@ -6,9 +6,9 @@
 
 **Status**: Accepted (2026-08-19)
 
-**Clarifications (2026-08-19)**: FR-007 — the UI is a **lightweight page served by FastAPI** (one
-HTML/JS page + a chart lib reading the JSON API). No new service; Streamlit/Next.js are not used for
-the core. Spec accepted — ready to implement.
+**Clarifications (2026-08-19)**: FR-007 — the UI is a **React / Next.js app styled with Tailwind CSS**
+(a separate `frontend/`) that consumes the FastAPI JSON read API. **Not** a FastAPI-served page,
+**not** Streamlit. Spec accepted — ready to implement.
 
 **Input**: A read API + a dashboard UI over the `published` mart (and the model residuals from spec
 002). It shows the **value-for-money benchmark** — which countries over/under-perform their health
@@ -68,8 +68,9 @@ and `published.model_residual` — never `staging`/`warehouse`/`raw` (Principle 
 - **FR-005**: The API MUST read **only** `published.*`; nothing user-facing reads other zones.
 - **FR-006**: The feature MUST be covered by tests: each endpoint returns the expected shape; the
   benchmark handles the residuals-absent case.
-- **FR-007**: The UI is a **lightweight page served by FastAPI** — one HTML/JS page + a chart lib
-  (Plotly/Chart.js via CDN) that reads the JSON API. No new service, no build step. *(Clarified.)*
+- **FR-007**: The UI is a **React / Next.js (App Router) app styled with Tailwind CSS** — a separate
+  `frontend/` that consumes the FastAPI JSON read API (`/countries`, `/timeseries`, `/compare`,
+  `/benchmark`); charts via a React chart library (Recharts / Tremor). *(Clarified.)*
 
 ### Key Entities
 
