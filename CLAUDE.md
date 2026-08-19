@@ -79,17 +79,9 @@ paths out of production code, comments, and commit messages.
 ## Harness
 
 - **Commands:** `.claude/commands/` — `speckit.*` (Spec Kit), `rpi` (RPI orchestrator), and the
-  project's own `csi.*` operational commands.
+  project's own `ops.*` operational commands.
 - **Templates:** `.specify/templates/` — spec, plan, tasks, checklist, constitution.
 - **Scripts:** `.specify/scripts/bash/` — workflow scripts the commands call.
-
-### `csi` wiring
-
-This starter ships operational commands as `csi.*` (e.g. `csi.status`, `csi.preflight`,
-`csi.smoke`). When stamping a project, choose a short project prefix and replace `csi`
-everywhere — in the command **filenames** (`csi.status.md` -> `myproj.status.md`) and in any
-in-file references. After stamping, `/myproj.status` etc. are the project's own commands. Pick the
-prefix once and keep it stable; it is how these commands are grouped and discovered.
 
 ## What "done" means
 
@@ -100,7 +92,7 @@ say so here. When surfaces disagree, name which one wins.
 
 ## Gates before push
 
-Before pushing, run `/csi.preflight` (lint, typecheck, test, secret scan) and get it green.
+Before pushing, run `/ops.preflight` (lint, typecheck, test, secret scan) and get it green.
 The security scan must also be green: **nothing merges with any gate red.** And write
 the test first: tests precede the implementation they cover (see the constitution's TDD principle).
 

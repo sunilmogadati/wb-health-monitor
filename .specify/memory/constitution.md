@@ -54,7 +54,7 @@ We do not vibe-code. Every feature is specified first and tested first.
   a plan passes the **Constitution Check** before and after design.
 - **Tests before implementation.** Write the failing test, then implement until it passes —
   data-quality tests, model-evaluation tests, and API tests.
-- **CI is a gate.** `/csi.preflight` (lint, typecheck, full test suite, no secrets) MUST be
+- **CI is a gate.** `/ops.preflight` (lint, typecheck, full test suite, no secrets) MUST be
   green before any PR. No code merges without a passing test that covers its behavior.
 
 ### III. Governed Data Pipeline — Zone Discipline
@@ -119,8 +119,8 @@ Anyone can run the whole thing from a clean clone.
   converge`; hard tasks run the **RPI loop** (`/rpi`: research → plan → implement → review).
 - **Ticket ownership (IKEA effect).** `tasks.md` becomes GitHub issues (`/speckit.taskstoissues`);
   each team member owns a ticket **end to end** — spec-check → tests → build → PR.
-- **Gates:** `/csi.preflight` (lint, typecheck, tests, secret scan) before every PR;
-  `/csi.feature-exit` for Definition of Done; `/csi.retro` at session end.
+- **Gates:** `/ops.preflight` (lint, typecheck, tests, secret scan) before every PR;
+  `/ops.feature-exit` for Definition of Done; `/ops.retro` at session end.
 - **Branch naming:** `<type>/<issue>-<slug>` with `<type>` ∈ {feat, fix, docs, chore}.
 - **PRs are focused** and MUST pass all gates, add/extend tests for new behavior, and update
   docs when behavior changes.

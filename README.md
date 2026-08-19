@@ -176,7 +176,7 @@ This project follows **Spec-Driven Development** (GitHub Spec Kit). The flow is
 
 - **The rules:** [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — read this first.
 - **The commands:** `.claude/commands/` — `speckit.*` (the lifecycle), `rpi` (deep per-task loop),
-  and `csi.*` (project gates like `preflight`, `status`, `feature-exit`).
+  and `ops.*` (project gates like `preflight`, `status`, `feature-exit`).
 
 *(The methodology is documented in the specs.)*
 

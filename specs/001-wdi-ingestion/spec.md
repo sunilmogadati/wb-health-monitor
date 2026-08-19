@@ -111,7 +111,7 @@ downstream.
 
 ## Assumptions
 
-- The stamped stack is available: object storage (MinIO, S3-compatible) and Postgres. The `raw`
+- The provisioned stack is available: object storage (MinIO, S3-compatible) and Postgres. The `raw`
   bucket exists or is created by the ingest on first use.
 - `wbgapi` is the WDI client; the source is public (no keys, no scraping).
 - Scope is country/WB-region level only (no sub-national data).
