@@ -16,14 +16,14 @@ ENV PYTHONPATH=/workspace/backend:/workspace
 # curl is present for the container healthcheck only. Kept minimal — every package here is surface
 # area for a container scan.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl \
+ && apt-get install -y --no-install-recommends curl libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 
 # Dependencies are installed from the manifest alone, before the source is copied, so a source edit
 # does not invalidate the dependency layer on every rebuild.
 COPY pyproject.toml ./
 RUN pip install --upgrade pip setuptools wheel \
- && pip install -e ".[dev]"
+ && pip install -e ".[dev,ml,ai]"
 
 COPY . .
 
