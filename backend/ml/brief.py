@@ -1,7 +1,7 @@
 """Country Health Brief — structured LLM output (spec 002, FR-007/008/009).
 
 ``CountryHealthBrief`` is the validated Pydantic contract. ``build_brief()`` fills it: with an
-Anthropic API key it asks Claude for the summary (STUDENT TODO), otherwise it falls back to a
+Anthropic API key it asks Claude for the summary (TODO), otherwise it falls back to a
 deterministic template so tests and offline dev pass. Framing is value-for-money — an association
 with spending, NOT causation or blame (Principle V). Do not add causal/ranking language.
 """

@@ -8,17 +8,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 data into a benchmarking tool: it ingests World Development Indicators, curates them through a governed
 pipeline (raw to staging to warehouse to published), trains and evaluates models that surface where
 health systems under-perform relative to their spending, and serves the result over an API plus a
-country-to-region dashboard. It is built by a training cohort as a collaborative team project.
+country-to-region dashboard. It is a collaborative team project.
 
-## Cohort members: your task & how to contribute (read this first)
+## Contributing: your task (read this first)
 
-**Full step-by-step: [`docs/CAPSTONE_ROADMAP.md`](docs/CAPSTONE_ROADMAP.md).**
+**Full step-by-step: [`docs/ROADMAP.md`](docs/ROADMAP.md).**
 
 - **Your current task is spec [`002-country-health-model`](specs/002-country-health-model/spec.md)** —
-  it *is* the ML homework: pull the feature indicators, predict `life_expectancy`, compare
+  it covers: pull the feature indicators, predict `life_expectancy`, compare
   LinearRegression / DecisionTree / RandomForest / **XGBoost**, and produce a validated Pydantic
   **Country Health Brief** (structured LLM output). If your research matches that, this is your spec.
-- **The scaffold is `backend/ml/`** — search for `STUDENT TODO`: add XGBoost + residuals in
+- **The scaffold is `backend/ml/`** — search for `TODO`: add XGBoost + residuals in
   `train.py`, and the Claude structured-output call in `brief.py`. Loop: `make ingest` → `make train`
   → `make test`. Read the spec's Success Criteria before you start; your PR is judged against them.
 - **Git Flow to push your work:** `main` = released; **`develop`** = shared integration branch. Work
@@ -79,17 +79,9 @@ paths out of production code, comments, and commit messages.
 ## Harness
 
 - **Commands:** `.claude/commands/` — `speckit.*` (Spec Kit), `rpi` (RPI orchestrator), and the
-  project's own `csi.*` operational commands.
+  project's own `ops.*` operational commands.
 - **Templates:** `.specify/templates/` — spec, plan, tasks, checklist, constitution.
 - **Scripts:** `.specify/scripts/bash/` — workflow scripts the commands call.
-
-### `csi` wiring
-
-This starter ships operational commands as `csi.*` (e.g. `csi.status`, `csi.preflight`,
-`csi.smoke`). When stamping a project, choose a short project prefix and replace `csi`
-everywhere — in the command **filenames** (`csi.status.md` -> `myproj.status.md`) and in any
-in-file references. After stamping, `/myproj.status` etc. are the project's own commands. Pick the
-prefix once and keep it stable; it is how these commands are grouped and discovered.
 
 ## What "done" means
 
@@ -100,7 +92,7 @@ say so here. When surfaces disagree, name which one wins.
 
 ## Gates before push
 
-Before pushing, run `/csi.preflight` (lint, typecheck, test, secret scan) and get it green.
+Before pushing, run `/ops.preflight` (lint, typecheck, test, secret scan) and get it green.
 The security scan must also be green: **nothing merges with any gate red.** And write
 the test first: tests precede the implementation they cover (see the constitution's TDD principle).
 

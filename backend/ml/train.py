@@ -1,9 +1,9 @@
 """Train & compare models for life expectancy and persist residuals + artifacts.
 
-Runs on the HOST — where scikit-learn / xgboost / pandas are installed, the same place the homework
-ran:  ``make train``  (or ``cd backend && python -m ml.train``). Reads the governed feature table
+Runs on the HOST — where scikit-learn / xgboost / pandas are installed:  ``make train``  (or
+``cd backend && python -m ml.train``). Reads the governed feature table
 from Postgres, trains models on a shared seeded split, prints a metrics comparison, and saves the
-winner. Fill in the STUDENT TODO sections with your homework (XGBoost, residuals, the brief).
+winner. Fill in the TODO sections (XGBoost, residuals, the brief).
 
 Honest modeling (Principle V): residuals are a value-for-money benchmark — association, not
 causation. No country is "failing"; it is above/below what its spending + context predict.

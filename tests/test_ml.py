@@ -1,6 +1,6 @@
 """Smoke tests for spec 002 that need no DB, no LLM key, and no modeling deps.
 
-They guard the two things students must not break: the brief is schema-valid, and its framing stays
+They guard the two things that must not regress: the brief is schema-valid, and its framing stays
 honest (value-for-money, no blame language — spec SC-006 / Principle V).
 """
 
