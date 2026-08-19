@@ -87,6 +87,7 @@ downstream.
 - **FR-008**: The default economy scope is [NEEDS CLARIFICATION: all countries, or one WB region (e.g. Sub-Saharan Africa) for the teaching build?].
 - **FR-009**: The default year range is [NEEDS CLARIFICATION: e.g. 2000 through the latest available year?].
 - **FR-010**: Ingest cadence is [NEEDS CLARIFICATION: on-demand only for the capstone, or also scheduled?].
+- **FR-011**: Ingestion MUST be driven by a **source registry** (`ingestion.data_sources`): each run resolves a **registered, active** source, and every `pull_log` row references it (`source_id`) — so ingestion is config-driven and every run traces to its source (provenance). Adding a public source is a registry row, not a code change (realizes FR-005). The registry holds **no credentials** (FR-007); auth-bearing sources are out of scope (public data only, Principle I).
 
 ### Key Entities *(include if feature involves data)*
 

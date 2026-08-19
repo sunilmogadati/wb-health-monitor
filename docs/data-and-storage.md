@@ -155,3 +155,21 @@ curl -s http://localhost:9000/minio/health/live -o /dev/null -w "%{http_code}\n"
 
 Each of these becomes a ticket. See the [constitution](../.specify/memory/constitution.md) (Principle III,
 zone discipline) for the rules the pipeline must follow.
+
+## 6. The source registry (where each pull comes from)
+
+Ingestion is **driven by a registry**, not hardcoded. `ingestion.data_sources` holds one row per
+source — today just `world_bank_wdi` (`kind = rest-api`, public, no credentials), with its region,
+years, and indicators in a `config` JSON column. Every `pull_log` row references its source via
+`source_id`, so any loaded value traces back to a registered source (**provenance**).
+
+Adding a second **public** source (e.g. WHO) is a new registry row, not new code. The registry holds
+**no secrets** — auth-bearing sources are out of scope here (public data only; constitution Principle I).
+
+```sql
+select * from ingestion.data_sources;
+select p.pull_id, d.name, p.rows_fetched, p.status
+  from ingestion.pull_log p
+  join ingestion.data_sources d on d.source_id = p.source_id
+ order by p.pull_id desc;
+```
