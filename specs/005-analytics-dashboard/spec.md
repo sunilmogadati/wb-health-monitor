@@ -4,7 +4,11 @@
 
 **Created**: 2026-08-19
 
-**Status**: Draft
+**Status**: Accepted (2026-08-19)
+
+**Clarifications (2026-08-19)**: FR-007 — the UI is a **lightweight page served by FastAPI** (one
+HTML/JS page + a chart lib reading the JSON API). No new service; Streamlit/Next.js are not used for
+the core. Spec accepted — ready to implement.
 
 **Input**: A read API + a dashboard UI over the `published` mart (and the model residuals from spec
 002). It shows the **value-for-money benchmark** — which countries over/under-perform their health
@@ -64,10 +68,8 @@ and `published.model_residual` — never `staging`/`warehouse`/`raw` (Principle 
 - **FR-005**: The API MUST read **only** `published.*`; nothing user-facing reads other zones.
 - **FR-006**: The feature MUST be covered by tests: each endpoint returns the expected shape; the
   benchmark handles the residuals-absent case.
-- **FR-007**: The UI delivery is [NEEDS CLARIFICATION: (a) a lightweight page served by FastAPI (one
-  HTML/JS page + a chart lib, reads the JSON API), (b) Streamlit as a separate compose service, or
-  (c) a separate Next.js app. Recommendation: (a) — no new service, teaches API↔frontend, fits the
-  py-service starter; Next.js is a stretch].
+- **FR-007**: The UI is a **lightweight page served by FastAPI** — one HTML/JS page + a chart lib
+  (Plotly/Chart.js via CDN) that reads the JSON API. No new service, no build step. *(Clarified.)*
 
 ### Key Entities
 
