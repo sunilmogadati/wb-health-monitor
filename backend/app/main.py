@@ -12,6 +12,8 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI
 
+from app.ask import router as ask_router
+
 API_V1_PREFIX = "/api/v1"
 
 router = APIRouter(tags=["health"])
@@ -50,6 +52,7 @@ def create_app() -> FastAPI:
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
     app.include_router(router, prefix=API_V1_PREFIX)
+    app.include_router(ask_router, prefix=API_V1_PREFIX)
     return app
 
 

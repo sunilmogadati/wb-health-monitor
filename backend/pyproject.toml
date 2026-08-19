@@ -28,13 +28,19 @@ ml = [
   "xgboost>=2.0",
   "joblib>=1.3",
 ]
+# Agent deps for spec 004 (ai.insights). Not required to import ai.insights — the Claude agent is
+# imported lazily, so the module works dependency-free when no ANTHROPIC_API_KEY is set.
+ai = [
+  "langchain>=0.3",
+  "langchain-anthropic>=0.3",
+]
 
 [build-system]
 requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["app*", "ml*"]
+include = ["app*", "ml*", "ai*"]
 
 # Ruff configuration lives in the REPOSITORY ROOT (`ruff.toml`), not here, so a single config covers
 # backend/ and its sibling tests/ regardless of a job's working directory.
@@ -48,6 +54,11 @@ exclude = ["alembic/versions/"]
 
 [[tool.mypy.overrides]]
 module = ["alembic.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Lazily imported inside ai.insights so the module stays importable without the `ai` extra.
+module = ["langchain.*", "langchain_anthropic.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
