@@ -3,8 +3,8 @@ SYNC IMPACT REPORT
 ==================
 Version change: (stamped placeholder) → 1.0.0
 Bump rationale: Initial constitution for the wb-health-monitor platform, authored from the
-  approved Project Brief's non-negotiables. Replaces the Spec-Kit example constitution that
-  ships in the starter. MAJOR baseline — establishes binding governance where none existed.
+  approved Project Brief's non-negotiables. Replaces the example constitution that
+  ships with the Spec Kit tooling. MAJOR baseline — establishes binding governance where none existed.
 
 Status: RATIFIED 1.0.0 — reviewed and adopted by the team (2026-08-18).
 
