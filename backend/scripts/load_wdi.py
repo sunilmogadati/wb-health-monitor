@@ -22,13 +22,26 @@ def main() -> None:
 
     indicators = sorted({r["indicator"] for r in rows})
     with psycopg.connect(url) as conn, conn.cursor() as cur:
+        # Ingestion is driven by the registry: resolve the registered, active source first.
+        cur.execute(
+            "SELECT source_id FROM ingestion.data_sources WHERE name = %s AND is_active",
+            ("world_bank_wdi",),
+        )
+        src = cur.fetchone()
+        if src is None:
+            raise SystemExit(
+                "source 'world_bank_wdi' is not registered/active in ingestion.data_sources"
+                " - run `make migrate`"
+            )
+        source_id = src[0]
+
         cur.execute(
             """INSERT INTO ingestion.pull_log
-                 (indicators, economies, object_keys, year_from, year_to,
+                 (source_id, indicators, economies, object_keys, year_from, year_to,
                   rows_fetched, status, started_at)
-               VALUES (%s, %s, %s, %s, %s, %s, 'running', now())
+               VALUES (%s, %s, %s, %s, %s, %s, %s, 'running', now())
                RETURNING pull_id""",
-            (indicators, ["SSF"], [str(CSV)], YEAR_FROM, YEAR_TO, len(rows)),
+            (source_id, indicators, ["SSF"], [str(CSV)], YEAR_FROM, YEAR_TO, len(rows)),
         )
         pull_id = cur.fetchone()[0]
 
