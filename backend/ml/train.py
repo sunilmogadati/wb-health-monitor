@@ -1,9 +1,9 @@
-"""Train & compare models for life expectancy, then (STUDENT TODO) persist residuals + a brief.
+"""Train & compare models for life expectancy, then (TODO) persist residuals + a brief.
 
-Runs on the HOST — where scikit-learn / xgboost / pandas are installed, the same place the homework
-ran:  ``make train``  (or ``cd backend && python -m ml.train``). Reads the governed feature table
+Runs on the HOST — where scikit-learn / xgboost / pandas are installed:  ``make train``  (or
+``cd backend && python -m ml.train``). Reads the governed feature table
 from Postgres, trains models on a shared seeded split, prints a metrics comparison, and saves the
-winner. Fill in the STUDENT TODO sections with your homework (XGBoost, residuals, the brief).
+winner. Fill in the TODO sections (XGBoost, residuals, the brief).
 
 Honest modeling (Principle V): residuals are a value-for-money benchmark — association, not
 causation. No country is "failing"; it is above/below what its spending + context predict.
@@ -35,7 +35,7 @@ def load_frame() -> pd.DataFrame:
 
 
 def candidate_models() -> dict:
-    # STUDENT TODO (FR-003): add XGBoost — `from xgboost import XGBRegressor` — and any tuning you did.
+    # TODO (FR-003): add XGBoost — `from xgboost import XGBRegressor` — and any tuning you did.
     return {
         "linear_regression": LinearRegression(),
         "decision_tree": DecisionTreeRegressor(random_state=SEED),
@@ -70,7 +70,7 @@ def main() -> None:
     joblib.dump(fitted[winner], MODELS_DIR / "life_expectancy.joblib")
     print(f"saved -> {MODELS_DIR / 'life_expectancy.joblib'}")
 
-    # STUDENT TODO (FR-005): with the winning model, predict over ALL rows, compute residuals
+    # TODO (FR-005): with the winning model, predict over ALL rows, compute residuals
     #   (actual - predicted), and persist them (e.g. published.model_residual) — value-for-money,
     #   never causal. Then build a CountryHealthBrief (ml.brief.build_brief) for a chosen country.
 

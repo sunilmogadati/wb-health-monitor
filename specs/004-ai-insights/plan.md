@@ -1,6 +1,6 @@
 # Implementation Plan: AI Insights (spec 004)
 
-**Status**: For review · **Spec**: `spec.md` (Accepted) · **Author**: instructor
+**Status**: For review · **Spec**: `spec.md` (Accepted) · **Author**: maintainer
 
 ## Summary
 

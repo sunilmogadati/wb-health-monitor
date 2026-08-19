@@ -4,7 +4,11 @@
 
 **Created**: 2026-08-18
 
-**Status**: Draft
+**Status**: Accepted (2026-08-18)
+
+**Clarifications (2026-08-18)**: FR-009 — the transform tool is **dbt** (`dbt-postgres`), with
+`staging -> warehouse -> published` models, run on the host via `make dbt-build`. Chosen to teach the
+standard tool.
 
 **Input**: Turn the flat `staging.wdi_observation` into a **conformed dimensional model** (Kimball star
 schema) in a `warehouse` schema, and expose a clean `published` mart that the model (spec 002) and the
@@ -77,9 +81,8 @@ indicators — without having to join the star themselves.
   indicators, as the single read surface for spec 002 (model) and spec 005 (dashboard).
 - **FR-008**: The transform MUST be reproducible in the container and covered by tests: dimension
   uniqueness, fact grain uniqueness, referential integrity, and published row counts.
-- **FR-009**: The build MUST be driven by a documented command [NEEDS CLARIFICATION: transform tool —
-  **dbt** (`staging → warehouse → published` models, adds `dbt-postgres`) vs plain **SQL in an Alembic
-  migration**]. Recommendation: dbt, to match the EMET pattern and teach the standard tool.
+- **FR-009**: The build MUST be driven by a documented command — **dbt** (`staging → warehouse →
+  published` models via `dbt-postgres`, run with `make dbt-build`). *(Clarified — dbt chosen.)*
 
 ### Key Entities
 

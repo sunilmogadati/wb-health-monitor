@@ -2,11 +2,11 @@
 SYNC IMPACT REPORT
 ==================
 Version change: (stamped placeholder) → 1.0.0
-Bump rationale: Initial constitution for the wb-health-monitor capstone, authored from the
-  approved Project Brief's non-negotiables. Replaces the Spec-Kit example constitution that
-  ships in the starter. MAJOR baseline — establishes binding governance where none existed.
+Bump rationale: Initial constitution for the wb-health-monitor platform, authored from the
+  approved Project Brief's non-negotiables. Replaces the example constitution that
+  ships with the Spec Kit tooling. MAJOR baseline — establishes binding governance where none existed.
 
-Status: RATIFIED 1.0.0 — reviewed and adopted by the cohort in the kickoff session (2026-08-18).
+Status: RATIFIED 1.0.0 — reviewed and adopted by the team (2026-08-18).
 
 Principles defined:
   I.   Public Data Only (NON-NEGOTIABLE)
@@ -21,7 +21,7 @@ Added sections:
   - Development Workflow & Quality Gates
   - Governance
 
-Follow-up TODOs: cohort ratification; confirm the compliance regime (ai-security) at stamp
+Follow-up TODOs: confirm the compliance regime (ai-security) at stamp
   config; add a web-service section if the dashboard is built as a separate Next.js service.
 -->
 
@@ -54,7 +54,7 @@ We do not vibe-code. Every feature is specified first and tested first.
   a plan passes the **Constitution Check** before and after design.
 - **Tests before implementation.** Write the failing test, then implement until it passes —
   data-quality tests, model-evaluation tests, and API tests.
-- **CI is a gate.** `/csi.preflight` (lint, typecheck, full test suite, no secrets) MUST be
+- **CI is a gate.** `/ops.preflight` (lint, typecheck, full test suite, no secrets) MUST be
   green before any PR. No code merges without a passing test that covers its behavior.
 
 ### III. Governed Data Pipeline — Zone Discipline
@@ -98,7 +98,7 @@ Anyone can run the whole thing from a clean clone.
 - **One-command dev loop.** The full stack comes up via `docker compose` / `make up`, with the
   source bind-mounted at `/workspace`. A `curl /health` check passes before the UI is opened.
 - **Deployed prototype.** The model ships behind **FastAPI** (`/api`, `/health`, `/metrics`)
-  and/or a dashboard — the official capstone deliverable.
+  and/or a dashboard — the platform deliverable.
 - **Documented.** README + architecture docs stay in sync with behavior; the demo is
   reproducible.
 
@@ -119,8 +119,8 @@ Anyone can run the whole thing from a clean clone.
   converge`; hard tasks run the **RPI loop** (`/rpi`: research → plan → implement → review).
 - **Ticket ownership (IKEA effect).** `tasks.md` becomes GitHub issues (`/speckit.taskstoissues`);
   each team member owns a ticket **end to end** — spec-check → tests → build → PR.
-- **Gates:** `/csi.preflight` (lint, typecheck, tests, secret scan) before every PR;
-  `/csi.feature-exit` for Definition of Done; `/csi.retro` at session end.
+- **Gates:** `/ops.preflight` (lint, typecheck, tests, secret scan) before every PR;
+  `/ops.feature-exit` for Definition of Done; `/ops.retro` at session end.
 - **Branch naming:** `<type>/<issue>-<slug>` with `<type>` ∈ {feat, fix, docs, chore}.
 - **PRs are focused** and MUST pass all gates, add/extend tests for new behavior, and update
   docs when behavior changes.

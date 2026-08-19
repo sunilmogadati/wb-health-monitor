@@ -1,7 +1,7 @@
 """Country Health Brief — structured LLM output (spec 002, FR-007/008/009).
 
 ``CountryHealthBrief`` is the validated Pydantic contract. ``build_brief()`` fills it: with an
-Anthropic API key it asks Claude for the summary (STUDENT TODO), otherwise it falls back to a
+Anthropic API key it asks Claude for the summary (TODO), otherwise it falls back to a
 deterministic template so tests and offline dev pass. Framing is value-for-money — an association
 with spending, NOT causation or blame (Principle V). Do not add causal/ranking language.
 """
@@ -72,7 +72,7 @@ def build_brief(
     summary = _template_summary(country_name, year, perf, residual)
 
     if os.getenv("ANTHROPIC_API_KEY"):
-        # STUDENT TODO (FR-007): call Claude with STRUCTURED OUTPUT validated against
+        # TODO (FR-007): call Claude with STRUCTURED OUTPUT validated against
         # CountryHealthBrief (anthropic SDK `.parse` / tool schema). Ground every number in
         # `indicators` / `predicted` / `actual`; keep the value-for-money framing; make no causal or
         # blame claim. On ANY error, keep the deterministic `summary` below (FR-008 — never crash CI).

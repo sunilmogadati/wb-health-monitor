@@ -12,6 +12,26 @@ import psycopg
 
 CSV = Path("/workspace/backend/data/wdi_observation.csv")
 YEAR_FROM, YEAR_TO = 2015, 2022
+RAW_BUCKET = os.environ.get("S3_BUCKET_RAW", "raw")
+
+
+def _land_raw(csv_path: Path, pull_id: int) -> str:
+    """Upload the raw pull to the MinIO `raw` zone (immutable bronze); return its s3:// key."""
+    import boto3
+
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=os.environ.get("S3_ENDPOINT_URL", "http://minio:9000"),
+        aws_access_key_id=os.environ.get("S3_ACCESS_KEY", "wbhealth"),
+        aws_secret_access_key=os.environ.get("S3_SECRET_KEY", "wbhealth_local_dev"),
+    )
+    try:
+        s3.head_bucket(Bucket=RAW_BUCKET)
+    except Exception:
+        s3.create_bucket(Bucket=RAW_BUCKET)
+    key = f"world_bank_wdi/pull_{pull_id}/wdi_observation.csv"
+    s3.upload_file(str(csv_path), RAW_BUCKET, key)
+    return f"s3://{RAW_BUCKET}/{key}"
 
 
 def main() -> None:
@@ -22,15 +42,35 @@ def main() -> None:
 
     indicators = sorted({r["indicator"] for r in rows})
     with psycopg.connect(url) as conn, conn.cursor() as cur:
+        # Ingestion is driven by the registry: resolve the registered, active source first.
+        cur.execute(
+            "SELECT source_id FROM ingestion.data_sources WHERE name = %s AND is_active",
+            ("world_bank_wdi",),
+        )
+        src = cur.fetchone()
+        if src is None:
+            raise SystemExit(
+                "source 'world_bank_wdi' is not registered/active in ingestion.data_sources"
+                " - run `make migrate`"
+            )
+        source_id = src[0]
+
         cur.execute(
             """INSERT INTO ingestion.pull_log
-                 (indicators, economies, object_keys, year_from, year_to,
+                 (source_id, indicators, economies, year_from, year_to,
                   rows_fetched, status, started_at)
                VALUES (%s, %s, %s, %s, %s, %s, 'running', now())
                RETURNING pull_id""",
-            (indicators, ["SSF"], [str(CSV)], YEAR_FROM, YEAR_TO, len(rows)),
+            (source_id, indicators, ["SSF"], YEAR_FROM, YEAR_TO, len(rows)),
         )
         pull_id = cur.fetchone()[0]
+
+        # Land the raw pull in the MinIO `raw` zone (bronze), then record its object key.
+        object_key = _land_raw(CSV, pull_id)
+        cur.execute(
+            "UPDATE ingestion.pull_log SET object_keys = %s WHERE pull_id = %s",
+            ([object_key], pull_id),
+        )
 
         cur.execute("CREATE SCHEMA IF NOT EXISTS staging")
         cur.execute(

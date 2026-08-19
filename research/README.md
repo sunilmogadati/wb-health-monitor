@@ -1,6 +1,6 @@
 # research/
 
-Individual exploration and homework lives here — **reference material, not the shipped
+Individual exploration lives here — **reference material, not the shipped
 implementation.** This is where your own experiments are welcome to differ from the app's structure.
 
 **Conventions**

@@ -12,7 +12,7 @@ Spec accepted — ready for `/speckit.plan`.
 
 **Input**: Predict a country's **life expectancy** from health spending and context features, compare
 several models honestly, and turn the result for one country into a structured **Country Health
-Brief** produced by an LLM with **validated (Pydantic) output**. This is the capstone's first
+Brief** produced by an LLM with **validated (Pydantic) output**. This is the platform's first
 modeling + AI slice; it reads the governed data landed by `001-wdi-ingestion`.
 
 > **Constitution alignment:** Principle I (public WB data only, no keys), Principle II (tests before
@@ -127,12 +127,12 @@ and a short plain-language summary — grounded only in the supplied data, no in
 - The interactive dashboard and any agentic/RAG natural-language querying (later specs).
 - Hyperparameter tuning beyond sensible defaults; time-series forecasting.
 
-## How the homework maps to the SDD phases
+## How the work maps to the SDD phases
 
 - **Research/Plan** (`/speckit.plan`): which features actually help, coverage thresholds, which model
   wins and why → `research.md` + `plan.md`. *This is the "research" part of the assignment.*
 - **Tasks** (`/speckit.tasks`): ingestion extension → feature table → training/eval → residuals →
   Pydantic brief → tests.
-- **Implement**: the code the students already wrote, moved into the repo structure and made to read
+- **Implement**: prototype code, moved into the repo structure and made to read
   the governed data + run in the container.
 - **Review**: honest-modeling check, tests green, PR approved, merge.

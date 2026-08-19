@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: staging
+    description: "Tidy long WDI observations landed by the ingestion pipeline (`make ingest`)."
+    schema: staging
+    tables:
+      - name: wdi_observation
+        description: "One row per country-year-indicator."
