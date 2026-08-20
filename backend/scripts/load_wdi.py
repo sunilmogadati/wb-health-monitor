@@ -63,7 +63,9 @@ def main() -> None:
                RETURNING pull_id""",
             (source_id, indicators, ["SSF"], YEAR_FROM, YEAR_TO, len(rows)),
         )
-        pull_id = cur.fetchone()[0]
+        pull_row = cur.fetchone()
+        assert pull_row is not None
+        pull_id = pull_row[0]
 
         # Land the raw pull in the MinIO `raw` zone (bronze), then record its object key.
         object_key = _land_raw(CSV, pull_id)
@@ -102,7 +104,9 @@ def main() -> None:
             "SELECT count(*), count(distinct country_code), count(distinct indicator) "
             "FROM staging.wdi_observation"
         )
-        n, countries, inds = cur.fetchone()
+        summary_row = cur.fetchone()
+        assert summary_row is not None
+        n, countries, inds = summary_row
         print(f"pull_id={pull_id}  loaded {n} rows  {countries} countries  {inds} indicators")
 
 

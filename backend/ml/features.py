@@ -84,7 +84,7 @@ def _rows_from_cursor(
     return [_normalize_row(dict(zip(colnames, row, strict=True))) for row in rows]
 
 
-def feature_rows(conn: psycopg.Connection, drop_incomplete: bool = True) -> list[dict]:
+def feature_rows(conn: psycopg.Connection, drop_incomplete: bool = True) -> list[dict[str, Any]]:
     """One row per country-year: ``country_code, country_name, year``, target, and FEATURES.
 
     Reads the published dbt mart directly. Rows missing the target are always excluded; when
@@ -110,7 +110,7 @@ def feature_rows(conn: psycopg.Connection, drop_incomplete: bool = True) -> list
         colnames = [d.name for d in cur.description]
         rows = _rows_from_cursor(colnames, cur.fetchall())
 
-    out: list[dict] = []
+    out: list[dict[str, Any]] = []
     for r in rows:
         if r[TARGET] is None:
             continue

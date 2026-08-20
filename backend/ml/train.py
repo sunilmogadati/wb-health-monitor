@@ -114,7 +114,7 @@ def _champion_rmse() -> float | None:
     return None
 
 
-def candidate_models() -> dict:
+def candidate_models() -> dict[str, Any]:
     return {
         "linear_regression": LinearRegression(),
         "decision_tree": DecisionTreeRegressor(random_state=SEED, max_depth=8),
