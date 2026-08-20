@@ -121,6 +121,63 @@ accuracy without adding insight. We did **not** run automated selection (RFE/Las
 features (interactions, `log(GDP)`) — both are honest next steps. The empirical check that the small set
 is reasonable comes from the model comparison below (tree ensembles fit it well).
 
+### Data quality in practice — a real anomaly the eval gate caught
+
+Building the continuous-evaluation gate (spec 008) paid off immediately: the **data-quality gate
+halted `make train`** because a value was impossible — **Central African Republic (CAF), 2022,
+`life_expectancy = 18.818`** (outside the plausible `[20, 95]` band). A newborn life expectancy of 18.8
+means the average person dies before 19 — only ever seen in a singular catastrophe (the 1994 Rwandan
+genocide, for one year).
+
+**Our bug, or the source?** We traced it: the `staging` value matched, and querying the World Bank API
+directly (`SP.DYN.LE00.IN` via `wbgapi`) returned the *same* `18.818` — so **our pipeline is faithful;
+the value comes from the World Bank itself.**
+
+**Scope.** Only **2 of 48 countries** are affected — **CAF** and **South Sudan (SSD)**, across 6
+country-years; the rest are clean (Kenya: a smooth 62.3 → 63.5). The tell isn't just the low value,
+it's the **shape**: CAF *sawtooths* — 51.9 → 51.0 → 45.2 → 52.3 → **31.5** → 50.6 → **40.3** → **18.8**.
+Life expectancy at birth is a smoothed, modelled measure; it does not oscillate ±15–20 years year to
+year, even in conflict. That signature is a data/modelling error, not real mortality.
+
+**Could it be real — war or calamity?** CAF and SSD are conflict-affected, so we tested against an
+**independent source**: the **WHO Global Health Observatory** (WHO's own life tables, which also model
+fragile states):
+
+| Year | CAF — World Bank | CAF — WHO | SSD — World Bank | SSD — WHO |
+|---|---|---|---|---|
+| 2015 | 51.9 | 51.0 | 39.8 | 59.3 |
+| 2017 | 45.2 | 51.3 | 35.4 | 58.9 |
+| 2019 | **31.5** | 52.9 | 58.1 | 59.0 |
+| 2021 | **40.3** | 52.3 | 57.0 | 58.6 |
+
+WHO shows both countries **smooth and stable** (CAF ~51–53, SSD ~59). A control country (Kenya) agrees
+closely between the two sources — so this is **not** a WHO-vs-World-Bank methodology offset; it is a
+World-Bank-specific error in a few fragile-state cells.
+
+**Verdict (evidence-backed).** The World Bank values for CAF and SSD are **confirmed source-data
+errors**, not war or calamity — WHO, which also accounts for conflict, shows stable values. The model
+had been silently training on `18.8` until the gate caught it.
+
+**How we handle it — filter + tripwire.** Because the source is authoritative-but-flawed and we cannot
+fix the World Bank, the pipeline (1) **drops implausible rows** from training (an extension of the
+complete-case null policy — bad values treated as missing, so CAF/SSD keep only their valid years), and
+(2) keeps the data-quality gate as a **systemic tripwire** that halts only when the *fraction* of bad
+rows is large (isolated source noise → filter and proceed; a broad break → halt). The plausibility
+bounds become part of the documented cleaning.
+
+**Beyond common sense — statistical anomaly detection.** The `[20, 95]` range only worked because a
+human *knew* 18.8 was impossible. For features where nobody has that intuition (GDP, fertility,
+internet %), the gate also runs two **domain-agnostic** detectors with no hand-set ranges:
+**robust-z** (median + MAD — values far from the column's bulk) and **year-over-year volatility**
+(values that jump implausibly vs their own history). Run on the real data they caught all of CAF/SSD
+*and surfaced a candidate the range check missed* — Botswana 2022, a >5-year one-year jump, flagged for
+review (plausibly a real post-COVID rebound — the detector finds *candidates*; a human or an independent
+source confirms).
+
+**The lesson.** Even an authoritative public source contains real errors. A production pipeline must
+*validate*, not trust — and the eval gate turned "silently training on garbage" into a caught,
+explained, evidence-backed decision.
+
 ### The model — selection, evaluation, and what we chose
 
 **How we select.** The pipeline trains four candidates — Linear Regression, Decision Tree, Random

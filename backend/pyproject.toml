@@ -46,7 +46,7 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["app*", "ml*"]
+include = ["app*", "ml*", "ai*", "evals*"]
 
 # Ruff configuration lives in the REPOSITORY ROOT (`ruff.toml`), not here, so a single config covers
 # backend/ and its sibling tests/ regardless of a job's working directory.
@@ -60,6 +60,27 @@ exclude = ["alembic/versions/"]
 
 [[tool.mypy.overrides]]
 module = ["alembic.*"]
+ignore_missing_imports = true
+
+# The scientific / vendor stack: some ship a py.typed (pandas, sklearn, numpy) whose stubs use
+# 3.12+ syntax our target can't parse, others ship none. `follow_imports = skip` makes mypy treat
+# them all as untyped without analysing their stubs — the only reliable way to keep strict mode on
+# our own code without pulling the numpy stub-syntax crash into the build.
+[[tool.mypy.overrides]]
+module = [
+  "numpy", "numpy.*",
+  "pandas", "pandas.*",
+  "sklearn", "sklearn.*",
+  "scipy", "scipy.*",
+  "joblib", "joblib.*",
+  "xgboost", "xgboost.*",
+  "boto3", "boto3.*",
+  "botocore", "botocore.*",
+  "wbgapi", "wbgapi.*",
+  "langchain", "langchain.*",
+  "langchain_anthropic", "langchain_anthropic.*",
+]
+follow_imports = "skip"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

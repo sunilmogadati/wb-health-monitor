@@ -1,0 +1,35 @@
+{
+  "_comment": "spec 008 thresholds & config — the one place quality bounds live (FR-010).",
+  "banned_language": [
+    "failing", "failed", "failure", "worst", "incompetent", "corrupt",
+    "mismanaged", "negligent", "to blame", "at fault", "disgrace"
+  ],
+  "brief_band": 1.5,
+  "numbers_tolerance": 0.02,
+  "groundedness_floor": 0.7,
+  "rmse_regression_tolerance": 0.30,
+  "data_quality": {
+    "min_rows": 200,
+    "max_null_rate": 0.0,
+    "max_bad_fraction": 0.05,
+    "value_ranges": {
+      "life_expectancy": [20.0, 95.0],
+      "health_spend_pct_gdp": [0.0, 30.0],
+      "gdp_per_capita": [0.0, 250000.0],
+      "internet_pct": [0.0, 100.0],
+      "fertility_rate": [0.5, 9.0]
+    }
+  },
+  "anomaly_detection": {
+    "_comment": "domain-agnostic detectors. robust-z ONLY on bounded/unimodal columns — a skewed level variable (GDP) false-positives on genuinely rich/poor entities; use YoY there instead (spec 008 Q4).",
+    "entity_key": "country_code",
+    "year_key": "year",
+    "robust_z_columns": ["life_expectancy", "fertility_rate", "internet_pct"],
+    "robust_z_threshold": 3.5,
+    "max_yoy_change": {
+      "life_expectancy": 5.0,
+      "fertility_rate": 1.0,
+      "internet_pct": 25.0
+    }
+  }
+}

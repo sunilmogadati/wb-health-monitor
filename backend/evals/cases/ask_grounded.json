@@ -1,0 +1,6 @@
+{
+  "id": "ask_grounded_health_spend",
+  "target": "ask",
+  "query": "What was health spending as a percent of GDP for Kenya in 2019?",
+  "expect": { "decline": false }
+}
