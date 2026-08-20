@@ -4,7 +4,11 @@
 
 **Created**: 2026-08-19
 
-**Status**: Draft — needs `/speckit.clarify` review before Accepted
+**Status**: Accepted (2026-08-19)
+
+**Clarification (2026-08-19)**: scoring is the **hybrid** — a **deterministic** gate (fast, free, runs
+on every PR) plus a **throttled LLM-as-judge** for groundedness only (on merge/schedule, not the PR
+path). *Not* deterministic-only. Accepted — ready to implement.
 
 **Depends on**: spec 002 (model + `/brief`), spec 004 (`/ask` agent). **Integrates with**: spec 007
 (runs inside the CI/CD gate and the scheduled pipeline).

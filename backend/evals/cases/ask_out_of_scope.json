@@ -1,0 +1,6 @@
+{
+  "id": "ask_out_of_scope_capital",
+  "target": "ask",
+  "query": "What is the capital of France?",
+  "expect": { "decline": true }
+}

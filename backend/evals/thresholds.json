@@ -1,0 +1,22 @@
+{
+  "_comment": "spec 008 thresholds & config — the one place quality bounds live (FR-010).",
+  "banned_language": [
+    "failing", "failed", "failure", "worst", "incompetent", "corrupt",
+    "mismanaged", "negligent", "to blame", "at fault", "disgrace"
+  ],
+  "brief_band": 1.5,
+  "numbers_tolerance": 0.02,
+  "groundedness_floor": 0.7,
+  "rmse_regression_tolerance": 0.30,
+  "data_quality": {
+    "min_rows": 200,
+    "max_null_rate": 0.0,
+    "value_ranges": {
+      "life_expectancy": [20.0, 95.0],
+      "health_spend_pct_gdp": [0.0, 30.0],
+      "gdp_per_capita": [0.0, 250000.0],
+      "internet_pct": [0.0, 100.0],
+      "fertility_rate": [0.5, 9.0]
+    }
+  }
+}
