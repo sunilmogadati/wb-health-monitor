@@ -164,6 +164,59 @@ def test_should_promote_rejects_regression() -> None:
     assert not checks.should_promote(challenger_rmse=4.0, champion_rmse=3.3, tolerance=0.3).passed
 
 
+# --- statistical anomaly detection (domain-agnostic) ------------------------------------------
+
+CAF_LE = [
+    (2015, 51.9), (2016, 51.0), (2017, 45.2), (2018, 52.3),
+    (2019, 31.5), (2020, 50.6), (2021, 40.3), (2022, 18.8),  # corrupted WB series (sawtooth)
+]
+KEN_LE = [
+    (2015, 62.3), (2016, 62.5), (2017, 62.7), (2018, 62.8),
+    (2019, 62.9), (2020, 61.6), (2021, 61.2), (2022, 63.5),  # smooth, real
+]
+
+
+def _series(code: str, pairs: list[tuple[int, float]]) -> list[dict[str, Any]]:
+    return [{"country_code": code, "year": y, "life_expectancy": v} for y, v in pairs]
+
+
+def test_robust_z_flags_far_outlier() -> None:
+    vals = [62.0, 62.5, 63.0, 61.0, 62.8, 18.8]  # the last is the CAR-like error
+    assert checks.robust_z_outliers(vals, threshold=3.5) == [5]
+
+
+def test_robust_z_ignores_smooth_series() -> None:
+    assert checks.robust_z_outliers([62.3, 62.5, 62.7, 62.8, 62.9, 63.5], threshold=3.5) == []
+
+
+def test_robust_z_short_series_returns_empty() -> None:
+    assert checks.robust_z_outliers([1.0, 2.0], threshold=3.5) == []
+
+
+def test_detect_anomalies_flags_corrupted_country_only() -> None:
+    rows = _series("CAF", CAF_LE) + _series("KEN", KEN_LE)
+    config = {
+        "columns": ["life_expectancy"],
+        "robust_z_threshold": 3.5,
+        "max_yoy_change": {"life_expectancy": 5.0},
+    }
+    flagged = checks.detect_anomalies(rows, config)
+    assert {f["entity"] for f in flagged} == {"CAF"}  # never the clean control country
+    assert "yoy_jump" in {f["reason"] for f in flagged}  # the sawtooth caught by volatility
+    assert any(f["reason"] == "robust_z" and f["value"] == 18.8 for f in flagged)  # 18.8 caught too
+
+
+def test_detect_anomalies_clean_data_no_flags() -> None:
+    smooth = [(2015 + i, round(60.0 + 0.2 * i, 1)) for i in range(8)]  # 60.0..61.4, tiny steps
+    rows = _series("KEN", smooth) + _series("TZA", [(y, round(v + 0.1, 1)) for y, v in smooth])
+    config = {
+        "columns": ["life_expectancy"],
+        "robust_z_threshold": 3.5,
+        "max_yoy_change": {"life_expectancy": 5.0},
+    }
+    assert checks.detect_anomalies(rows, config) == []
+
+
 # --- the runner's case wiring (no network) ----------------------------------------------------
 
 def test_evaluate_case_grounded_ask_passes() -> None:

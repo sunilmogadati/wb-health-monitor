@@ -18,5 +18,19 @@
       "internet_pct": [0.0, 100.0],
       "fertility_rate": [0.5, 9.0]
     }
+  },
+  "anomaly_detection": {
+    "_comment": "domain-agnostic detectors — catch anomalies without hand-set ranges (spec 008 Q4)",
+    "entity_key": "country_code",
+    "year_key": "year",
+    "columns": [
+      "life_expectancy", "health_spend_pct_gdp", "gdp_per_capita", "internet_pct", "fertility_rate"
+    ],
+    "robust_z_threshold": 3.5,
+    "max_yoy_change": {
+      "life_expectancy": 5.0,
+      "fertility_rate": 1.0,
+      "internet_pct": 25.0
+    }
   }
 }

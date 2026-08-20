@@ -181,6 +181,91 @@ def data_quality(rows: list[dict[str, Any]], config: dict[str, Any]) -> list[Che
     return results
 
 
+# --- statistical anomaly detection (domain-agnostic, no hand-set ranges) ----------------------
+
+def _median(xs: list[float]) -> float:
+    s = sorted(xs)
+    n = len(s)
+    mid = n // 2
+    return s[mid] if n % 2 else (s[mid - 1] + s[mid]) / 2
+
+
+def robust_z_outliers(values: list[float], threshold: float = 3.5) -> list[int]:
+    """Indices of values whose robust z-score exceeds ``threshold`` (median + MAD).
+
+    Robust z = 0.6745 * (x - median) / MAD, MAD = median(|x - median|); no distribution assumed. It
+    flags values far from the bulk **without any hand-set range** — the domain-agnostic catch for
+    features nobody has intuition about. Falls back to standard z when MAD is 0.
+    """
+    if len(values) < 3:
+        return []
+    med = _median(values)
+    mad = _median([abs(v - med) for v in values])
+    if mad > 0:
+        scores = [0.6745 * (v - med) / mad for v in values]
+    else:
+        mean = sum(values) / len(values)
+        std = (sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5
+        if std == 0:
+            return []
+        scores = [(v - mean) / std for v in values]
+    return [i for i, s in enumerate(scores) if abs(s) > threshold]
+
+
+def detect_anomalies(rows: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
+    """Flag anomalous cells with two domain-agnostic detectors (spec 008, question-4 upgrade).
+
+    1. **Population robust-z** — a value far from the column's bulk (no range needed).
+    2. **Per-entity year-over-year volatility** — a value that jumps implausibly vs its OWN history
+       (catches a smoothed series that sawtooths, regardless of the absolute magnitude).
+
+    Returns one record per flag: ``{entity, year, column, value, reason}``. Used to *filter* bad
+    rows and to drive the systemic *tripwire* (halt only when the flagged fraction is large).
+    """
+    entity_key = config.get("entity_key", "country_code")
+    year_key = config.get("year_key", "year")
+    z_threshold = float(config.get("robust_z_threshold", 3.5))
+    flagged: list[dict[str, Any]] = []
+
+    for col in config.get("columns", []):
+        present = [(r, float(r[col])) for r in rows if r.get(col) is not None]
+        vals = [v for _, v in present]
+        for i in robust_z_outliers(vals, z_threshold):
+            row = present[i][0]
+            flagged.append(
+                {
+                    "entity": row.get(entity_key),
+                    "year": row.get(year_key),
+                    "column": col,
+                    "value": present[i][1],
+                    "reason": "robust_z",
+                }
+            )
+
+    for col, limit in config.get("max_yoy_change", {}).items():
+        by_entity: dict[Any, list[dict[str, Any]]] = {}
+        for r in rows:
+            if r.get(col) is not None:
+                by_entity.setdefault(r.get(entity_key), []).append(r)
+        for entity, ent_rows in by_entity.items():
+            ordered = sorted(ent_rows, key=lambda r: r[year_key])
+            prev: float | None = None
+            for r in ordered:
+                value = float(r[col])
+                if prev is not None and abs(value - prev) > float(limit):
+                    flagged.append(
+                        {
+                            "entity": entity,
+                            "year": r[year_key],
+                            "column": col,
+                            "value": value,
+                            "reason": "yoy_jump",
+                        }
+                    )
+                prev = value
+    return flagged
+
+
 # --- champion / challenger (model promotion gate, FR-006) -------------------------------------
 
 def should_promote(
