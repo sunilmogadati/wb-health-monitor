@@ -27,7 +27,6 @@ INDICATORS = (
     "life_expectancy",
     "under5_mortality",
     "health_spend_pct_gdp",
-    "uhc_index",
     "gdp_per_capita",
     "internet_pct",
     "fertility_rate",
@@ -126,7 +125,7 @@ def get_country_year(conn: psycopg.Connection, country_code: str, year: int) -> 
     rows = _query(
         conn,
         """SELECT country_code, country_name, year, life_expectancy, under5_mortality,
-               health_spend_pct_gdp, uhc_index, gdp_per_capita, internet_pct, fertility_rate
+               health_spend_pct_gdp, gdp_per_capita, internet_pct, fertility_rate
            FROM published.country_year_indicators
            WHERE country_code = %s AND year = %s""",
         (country_code.upper(), year),
@@ -244,7 +243,7 @@ def _run_agent(conn: psycopg.Connection, question: str, sink: list[Citation]) ->
             the best 'value for money' countries. Use for comparison/ranking questions, e.g. "which
             countries get the most life expectancy for their health spending?". indicator and
             spend_indicator must each be one of: life_expectancy, under5_mortality,
-            health_spend_pct_gdp, uhc_index, gdp_per_capita, internet_pct, fertility_rate."""
+            health_spend_pct_gdp, gdp_per_capita, internet_pct, fertility_rate."""
             rows = top_by_value_for_money(conn, indicator, year, n, spend_indicator)
             sink.extend(rows)
             if not rows:

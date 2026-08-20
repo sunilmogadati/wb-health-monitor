@@ -12,6 +12,7 @@ import {
   getCountries,
   getTimeSeries,
 } from "@/lib/api";
+import { AskPanel } from "@/components/AskPanel";
 import { BenchmarkChart } from "@/components/BenchmarkChart";
 import { CompareChart } from "@/components/CompareChart";
 import { TrendChart } from "@/components/TrendChart";
@@ -132,6 +133,10 @@ export default function DashboardPage() {
           message={`Can't reach the analytics API: ${countriesError}. Check that the API is running and NEXT_PUBLIC_API_BASE is set.`}
         />
       )}
+
+      <SectionCard title="Ask AI">
+        <AskPanel />
+      </SectionCard>
 
       <SectionCard title="Value-for-money benchmark">
         <label className="mb-3 block text-sm text-slate-700">
