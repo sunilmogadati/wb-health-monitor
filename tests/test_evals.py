@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from evals import checks, run
+from evals import checks, judge, run
 
 # --- fixtures ---------------------------------------------------------------------------------
 
@@ -20,8 +20,8 @@ VALID_BRIEF: dict[str, Any] = {
     "indicators": {"health_spend_pct_gdp": 4.6},
     "predicted_life_expectancy": 62.0,
     "actual_life_expectancy": 66.0,
-    "residual": 4.0,  # 66 - 62, band 1.5 -> "above"
-    "performance_vs_spend": "above",
+    "residual": 4.0,  # 66 - 62, band 1.5 -> "above_expected"
+    "performance_vs_spend": "above_expected",
     "summary": "Kenya's outcome is above what its spending predicts.",
 }
 
@@ -246,3 +246,38 @@ def test_load_cases_are_wellformed() -> None:
     for case in cases:
         assert case["target"] in {"ask", "brief"}
         assert "id" in case
+
+
+# --- LLM-as-judge (groundedness) --------------------------------------------------------------
+
+def test_result_from_score_passes_above_floor() -> None:
+    assert judge.result_from_score(0.9, 0.7, "supported").passed
+
+
+def test_result_from_score_fails_below_floor() -> None:
+    result = judge.result_from_score(0.4, 0.7, "unsupported")
+    assert not result.passed
+    assert "0.40" in result.detail
+
+
+def test_judge_available_reflects_env(monkeypatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert judge.judge_available() is False
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test")
+    assert judge.judge_available() is True
+
+
+def test_judge_never_vacuous_pass_when_unavailable(monkeypatch) -> None:
+    # No key → the judge can't run, but it must FAIL "not evaluated", never silently pass (FR-004).
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    result = judge.judge_groundedness("q", "an answer", [], floor=0.7)
+    assert not result.passed
+    assert "not evaluated" in result.detail
+
+
+def test_run_judge_off_by_default() -> None:
+    # evaluate_case with run_judge=False (the free PR gate) adds no groundedness check.
+    thresholds = checks.load_thresholds()
+    case = {"id": "x", "target": "ask", "expect": {"decline": False}}
+    results = run.evaluate_case(ASK_GROUNDED, case, thresholds)
+    assert all(r.name != "groundedness" for r in results)
