@@ -165,6 +165,15 @@ complete-case null policy — bad values treated as missing, so CAF/SSD keep onl
 rows is large (isolated source noise → filter and proceed; a broad break → halt). The plausibility
 bounds become part of the documented cleaning.
 
+**Beyond common sense — statistical anomaly detection.** The `[20, 95]` range only worked because a
+human *knew* 18.8 was impossible. For features where nobody has that intuition (GDP, fertility,
+internet %), the gate also runs two **domain-agnostic** detectors with no hand-set ranges:
+**robust-z** (median + MAD — values far from the column's bulk) and **year-over-year volatility**
+(values that jump implausibly vs their own history). Run on the real data they caught all of CAF/SSD
+*and surfaced a candidate the range check missed* — Botswana 2022, a >5-year one-year jump, flagged for
+review (plausibly a real post-COVID rebound — the detector finds *candidates*; a human or an independent
+source confirms).
+
 **The lesson.** Even an authoritative public source contains real errors. A production pipeline must
 *validate*, not trust — and the eval gate turned "silently training on garbage" into a caught,
 explained, evidence-backed decision.
