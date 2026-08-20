@@ -51,9 +51,13 @@ migrate-down: ## Reverse the most recent migration
 
 # --- Data pipeline ---------------------------------------------------------
 
-ingest: ## Pull WB WDI data on the host, load it into Postgres, and log the run
+ingest: ## Pull WB WDI data, load into Postgres, log the run, and flag anomalies (spec 008 / ADR-0007)
 	python3 backend/scripts/pull_wdi.py
 	$(EXEC_API) python /workspace/backend/scripts/load_wdi.py
+	$(EXEC_API) python /workspace/backend/scripts/flag_quality.py
+
+flag: ## Re-run only the data-quality flag step on staging (spec 008 / ADR-0007)
+	$(EXEC_API) python /workspace/backend/scripts/flag_quality.py
 
 train: ## Train & compare models on the host (spec 002; needs: pip install -e "backend[ml]")
 	cd backend && python3 -m ml.train

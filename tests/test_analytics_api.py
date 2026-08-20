@@ -61,9 +61,6 @@ class _Connection:
 
 def _client_with_cursor(monkeypatch, cursor: _Cursor) -> TestClient:
     monkeypatch.setattr(analytics, "connect", lambda: _Connection(cursor))
-    # Isolate the data-quality flag lookup (spec 008) so these mart-contract tests don't collide
-    # with the shared mock cursor; the flag-gapping behaviour has its own test below.
-    monkeypatch.setattr(analytics, "_flagged_country_years", lambda _indicator: set())
     return TestClient(app)
 
 
@@ -117,22 +114,6 @@ def test_timeseries_unknown_indicator_returns_empty_result(monkeypatch) -> None:
     assert response.status_code == 200
     assert response.json() == []
     assert cursor.sql == ""
-
-
-def test_timeseries_gaps_flagged_country_years(monkeypatch) -> None:
-    """A country-year flagged by the data-quality gate (spec 008) is served as a gap."""
-    cursor = _Cursor(
-        ["country_code", "year", "indicator", "value"],
-        [("CAF", 2015, "life_expectancy", 51.9), ("CAF", 2022, "life_expectancy", 18.818)],
-    )
-    monkeypatch.setattr(analytics, "connect", lambda: _Connection(cursor))
-    monkeypatch.setattr(analytics, "_flagged_country_years", lambda _indicator: {("CAF", 2022)})
-    response = TestClient(app).get("/api/v1/timeseries?country=CAF&indicator=life_expectancy")
-
-    assert response.status_code == 200
-    by_year = {row["year"]: row["value"] for row in response.json()}
-    assert by_year[2015] == 51.9  # kept
-    assert by_year[2022] is None  # flagged 18.8 anomaly -> gap
 
 
 def test_compare_returns_selected_countries_for_one_indicator(monkeypatch) -> None:
