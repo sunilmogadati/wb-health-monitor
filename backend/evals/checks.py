@@ -31,7 +31,8 @@ BRIEF_REQUIRED: dict[str, type | tuple[type, ...]] = {
     "performance_vs_spend": str,
     "summary": str,
 }
-PERFORMANCE_BANDS = {"above", "near", "below"}
+# Matches ml.brief.Performance enum values (the /brief schema).
+PERFORMANCE_BANDS = {"above_expected", "near_expected", "below_expected"}
 
 
 @dataclass(frozen=True)
@@ -114,10 +115,10 @@ def brief_schema_valid(brief: dict[str, Any]) -> CheckResult:
 
 def _band_for(residual: float, band: float) -> str:
     if residual > band:
-        return "above"
+        return "above_expected"
     if residual < -band:
-        return "below"
-    return "near"
+        return "below_expected"
+    return "near_expected"
 
 
 def numbers_consistent(brief: dict[str, Any], tolerance: float, band: float) -> CheckResult:

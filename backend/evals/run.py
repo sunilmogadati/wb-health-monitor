@@ -40,24 +40,62 @@ def _text_blob(payload: dict[str, Any], target: str) -> str:
 
 
 def evaluate_case(
-    payload: dict[str, Any], case: dict[str, Any], thresholds: dict[str, Any]
+    payload: dict[str, Any],
+    case: dict[str, Any],
+    thresholds: dict[str, Any],
+    run_judge: bool = False,
 ) -> list[checks.CheckResult]:
-    """Apply the deterministic checks that apply to this case's target."""
+    """Apply the deterministic checks (+ the LLM-as-judge when enabled) for this case's target."""
     target = case["target"]
     expect = case.get("expect", {})
     blob = _text_blob(payload, target)
     results = [checks.no_banned_language(blob, thresholds["banned_language"])]
 
     if target == "ask":
-        results.append(checks.decline_behaviour(payload, bool(expect.get("decline", False))))
-        if not expect.get("decline", False):
+        declined = bool(expect.get("decline", False))
+        results.append(checks.decline_behaviour(payload, declined))
+        if not declined:
             results.append(checks.has_citations(payload))
     elif target == "brief":
         results.append(checks.brief_schema_valid(payload))
         tol = thresholds["numbers_tolerance"]
         band = thresholds["brief_band"]
         results.append(checks.numbers_consistent(payload, tol, band))
+
+    if run_judge:
+        results.extend(_judge_results(payload, case, thresholds))
     return results
+
+
+def _judge_results(
+    payload: dict[str, Any], case: dict[str, Any], thresholds: dict[str, Any]
+) -> list[checks.CheckResult]:
+    """Groundedness judge for the answerable cases (skips a case expected to decline)."""
+    from evals import judge
+
+    floor = float(thresholds.get("groundedness_floor", 0.7))
+    target = case["target"]
+    if target == "ask" and not case.get("expect", {}).get("decline", False):
+        return [
+            judge.judge_groundedness(
+                str(case.get("query", "")),
+                str(payload.get("answer", "")),
+                list(payload.get("citations", [])),
+                floor,
+            )
+        ]
+    if target == "brief":
+        cite = [
+            {
+                "predicted": payload.get("predicted_life_expectancy"),
+                "actual": payload.get("actual_life_expectancy"),
+                "residual": payload.get("residual"),
+                "indicators": payload.get("indicators"),
+            }
+        ]
+        question = f"Country health brief for {case.get('country')} {case.get('year')}"
+        return [judge.judge_groundedness(question, str(payload.get("summary", "")), cite, floor)]
+    return []
 
 
 def _call_api(base_url: str, case: dict[str, Any]) -> dict[str, Any]:
@@ -91,10 +129,16 @@ def main(argv: list[str] | None = None) -> int:
     report: list[dict[str, Any]] = []
     failed = 0
 
+    from evals import judge
+
+    run_judge = not args.deterministic_only and judge.judge_available()
+    if not args.deterministic_only and not judge.judge_available():
+        print("note: LLM-as-judge skipped — no ANTHROPIC_API_KEY (deterministic gate only)")
+
     for case in cases:
         try:
             payload = _call_api(args.base_url, case)
-            results = evaluate_case(payload, case, thresholds)
+            results = evaluate_case(payload, case, thresholds, run_judge=run_judge)
         except Exception as exc:  # a call/eval error is a red case, never a vacuous pass
             results = [checks.CheckResult("error", False, str(exc))]
         case_passed = all(r.passed for r in results)

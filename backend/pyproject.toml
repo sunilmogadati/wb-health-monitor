@@ -79,6 +79,7 @@ module = [
   "wbgapi", "wbgapi.*",
   "langchain", "langchain.*",
   "langchain_anthropic", "langchain_anthropic.*",
+  "anthropic", "anthropic.*",
 ]
 follow_imports = "skip"
 ignore_missing_imports = true

@@ -1,0 +1,62 @@
+# Continuous evaluation (spec 008 FR-008/FR-009).
+#
+# The deterministic eval CHECKERS are unit-tested on every PR by the main CI (tests/test_evals.py).
+# This workflow is the heavier INTEGRATION run: it stands up the full stack, runs the pipeline, and
+# runs the eval suite against the live API — catching regressions the unit tests can't (a real /ask
+# that stops citing, a /brief that drifts), and, on a schedule, drift we didn't cause (e.g. a model
+# tier change). The LLM-as-judge runs only if an ANTHROPIC_API_KEY secret is configured; otherwise
+# the runner prints a note and gates on the deterministic checks alone (FR-011).
+name: evals
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC — drift detection
+  workflow_dispatch: {}
+
+jobs:
+  evals:
+    name: continuous evaluation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Local env
+        run: cp .env.example .env
+
+      - name: Install host deps (pipeline + evals)
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,ml,warehouse,ai]"
+
+      - name: Stand up the stack + run the pipeline
+        run: |
+          make up
+          make migrate
+          make seed
+          make ingest
+          make dbt-build
+          make train
+
+      - name: Run the eval suite (judge if the secret is set)
+        working-directory: backend
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: PYTHONPATH="$PWD" python -m evals.run --out ../eval-report.json
+
+      - name: Upload the scored report (trend)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval-report.json
+
+      - name: Stack logs on failure
+        if: failure()
+        run: make logs || true
