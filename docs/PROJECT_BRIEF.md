@@ -37,7 +37,7 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 
 Also added since the first cut: an **Ask AI** dashboard panel (grounded, cited `/ask`) and **data-quality serving** (the read API returns a gap for flagged anomalies — the `18.8` no longer reaches the UI).
 
-**Open item (deferred):** move the data-quality detection **left** — from `train.py` into the `raw → staging` transform (a dbt cleansing model + a flag table), so the mart is clean at the source and downstream consumers stop re-filtering. Keeps `raw` immutable; flags at the first transform.
+**Data quality is shift-left (ADR-0007):** detection runs **once**, at the staging boundary (`make flag` / `scripts/flag_quality.py`), writes `ingestion.data_quality_flag`, and the **dbt `published` model nulls flagged cells** — so the mart is clean at the source and the model + API inherit it (no re-filtering). Pipeline order: `ingest → (flag) → dbt-build → train`. `raw` stays immutable.
 
 Constitution ratified v1.0.0. Details in the walkthrough below.
 

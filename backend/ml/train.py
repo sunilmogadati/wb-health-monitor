@@ -43,90 +43,6 @@ def load_frame() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def _range_flags(rows: list[dict[str, Any]], ranges: dict[str, Any]) -> list[dict[str, Any]]:
-    """Per-row static range violations (the hand-set bounds), as anomaly records."""
-    flagged: list[dict[str, Any]] = []
-    for r in rows:
-        for col, bounds in ranges.items():
-            v = r.get(col)
-            if v is not None and not (float(bounds[0]) <= float(v) <= float(bounds[1])):
-                flagged.append(
-                    {
-                        "entity": r.get("country_code"),
-                        "year": r.get("year"),
-                        "column": col,
-                        "value": v,
-                        "reason": "range",
-                    }
-                )
-    return flagged
-
-
-def persist_quality_flags(flags: list[dict[str, Any]]) -> int:
-    """Publish flagged country-year-indicators so the read API serves clean data (spec 008 FR-007).
-
-    One detection, applied everywhere: the same flags that drop rows from training also let
-    `/timeseries` and `/compare` return a gap instead of the bad value. The raw mart stays intact.
-    """
-    records = sorted({(str(f["entity"]), int(f["year"]), str(f["column"])) for f in flags})
-    with connect() as conn, conn.cursor() as cur:
-        cur.execute("CREATE SCHEMA IF NOT EXISTS published")
-        cur.execute("DROP TABLE IF EXISTS published.data_quality_flag")
-        cur.execute(
-            """
-            CREATE TABLE published.data_quality_flag (
-                country_code text NOT NULL,
-                year integer NOT NULL,
-                indicator text NOT NULL,
-                PRIMARY KEY (country_code, year, indicator)
-            )
-            """
-        )
-        cur.executemany(
-            "INSERT INTO published.data_quality_flag (country_code, year, indicator) "
-            "VALUES (%s, %s, %s)",
-            records,
-        )
-    return len(records)
-
-
-def data_quality_gate(df: pd.DataFrame, thresholds: dict[str, Any]) -> pd.DataFrame:
-    """Filter anomalous rows; halt only if too many are bad — spec-008 filter + tripwire (FR-007).
-
-    Flags each country-year with (a) static range violations and (b) domain-agnostic detection
-    (robust-z + year-over-year volatility). A large flagged FRACTION means the pull is systemically
-    broken → halt (SC-003); otherwise drop the flagged rows (isolated source errors, e.g. the WB's
-    CAF/SSD life-expectancy glitches) and train on the clean remainder. Returns the cleaned frame.
-    """
-    rows: list[dict[str, Any]] = df.to_dict("records")
-    dq = thresholds["data_quality"]
-    flags = _range_flags(rows, dq.get("value_ranges", {}))
-    flags += checks.detect_anomalies(rows, thresholds["anomaly_detection"])
-
-    flagged_keys = {(f["entity"], f["year"]) for f in flags}
-    fraction = len(flagged_keys) / len(rows) if rows else 0.0
-    for f in sorted(flags, key=lambda x: (str(x["entity"]), x["year"]))[:25]:
-        print(f"  flag  {f['entity']} {f['year']}  {f['column']}={f['value']}  ({f['reason']})")
-
-    max_bad = float(dq.get("max_bad_fraction", 0.05))
-    if fraction > max_bad:
-        raise SystemExit(
-            f"data-quality tripwire: {fraction:.1%} of rows flagged (> {max_bad:.0%}) — halting; "
-            "the pull looks systemically broken (spec 008 FR-007)"
-        )
-
-    clean = df[~df.apply(lambda r: (r["country_code"], r["year"]) in flagged_keys, axis=1)]
-    clean = clean.reset_index(drop=True)
-    min_rows = int(dq.get("min_rows", 0))
-    if len(clean) < min_rows:
-        raise SystemExit(f"only {len(clean)} clean rows (< {min_rows}) — halting (spec 008 FR-007)")
-    print(
-        f"data-quality: dropped {len(flagged_keys)} anomalous country-years "
-        f"({fraction:.1%}); training on {len(clean)} of {len(rows)}"
-    )
-    return clean
-
-
 def _champion_rmse() -> float | None:
     """The current champion's CV RMSE from saved metadata, or None on the first run."""
     if not METADATA_PATH.exists():
@@ -234,19 +150,9 @@ def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
 def main() -> None:
     df = load_frame()
 
-    # Spec 008 FR-007: filter anomalous rows (tripwire halts only if too many) before training.
+    # Data quality is handled upstream now (spec 008 / ADR-0007): the flag step + dbt null anomalies
+    # in the mart, so `load_frame` already returns clean rows — no filtering needed here.
     thresholds = checks.load_thresholds()
-    df = data_quality_gate(df, thresholds)
-
-    # Serving-quality flags over the FULL mart (incl. incomplete country-years), so /timeseries and
-    # /compare gap every anomalous value — one detection, applied everywhere (spec 008 FR-007).
-    with connect() as conn:
-        full_rows = feature_rows(conn, drop_incomplete=False)
-    serving_flags = _range_flags(full_rows, thresholds["data_quality"].get("value_ranges", {}))
-    serving_flags += checks.detect_anomalies(full_rows, thresholds["anomaly_detection"])
-    n_flags = persist_quality_flags(serving_flags)
-    print(f"published flags -> published.data_quality_flag ({n_flags} country-year-indicators)")
-
     feature_frame, target = df[FEATURES], df[TARGET]
 
     # Model SELECTION uses 5-fold cross-validated RMSE — robust to a single lucky/unlucky split,

@@ -269,6 +269,25 @@ def detect_anomalies(rows: list[dict[str, Any]], config: dict[str, Any]) -> list
     return flagged
 
 
+def range_flags(rows: list[dict[str, Any]], ranges: dict[str, Any]) -> list[dict[str, Any]]:
+    """Per-row static range violations (the hand-set bounds), as anomaly records (spec 008)."""
+    flagged: list[dict[str, Any]] = []
+    for row in rows:
+        for col, bounds in ranges.items():
+            value = row.get(col)
+            if value is not None and not (float(bounds[0]) <= float(value) <= float(bounds[1])):
+                flagged.append(
+                    {
+                        "entity": row.get("country_code"),
+                        "year": row.get("year"),
+                        "column": col,
+                        "value": value,
+                        "reason": "range",
+                    }
+                )
+    return flagged
+
+
 # --- champion / challenger (model promotion gate, FR-006) -------------------------------------
 
 def should_promote(

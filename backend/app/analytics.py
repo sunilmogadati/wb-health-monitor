@@ -24,7 +24,6 @@ Band = Literal["above", "near", "below"]
 
 _TIMESERIES_SQL = """
     SELECT
-        country_code,
         year,
         %s AS indicator,
         CASE %s
@@ -119,25 +118,6 @@ def _country_tokens(countries: str) -> list[str]:
     return [country.strip().lower() for country in countries.split(",") if country.strip()]
 
 
-def _flagged_country_years(indicator: str) -> set[tuple[str, int]]:
-    """Country-years flagged anomalous for this indicator (spec 008), so the UI shows a gap.
-
-    Empty when the flag table is absent (the pipeline hasn't run) — the mart is then served as-is.
-    """
-    try:
-        rows = _query(
-            "SELECT country_code, year FROM published.data_quality_flag WHERE indicator = %s",
-            (indicator,),
-        )
-    except psycopg.errors.UndefinedTable:
-        return set()
-    return {
-        (str(row["country_code"]), int(row["year"]))
-        for row in rows
-        if row.get("country_code") is not None
-    }
-
-
 @router.get("/countries", response_model=list[CountrySummary])
 def countries() -> list[CountrySummary]:
     """List countries that exist in the published mart."""
@@ -163,14 +143,11 @@ def timeseries(
         _TIMESERIES_SQL,
         (indicator, indicator, country, country),
     )
-    flagged = _flagged_country_years(indicator)
     return [
         TimeSeriesPoint(
             year=int(row["year"]),
             indicator=str(row["indicator"]),
-            value=None
-            if (str(row.get("country_code")), int(row["year"])) in flagged
-            else _as_float(row["value"]),
+            value=_as_float(row["value"]),
         )
         for row in rows
     ]
@@ -189,16 +166,13 @@ def compare(
         _COMPARE_SQL,
         (indicator, indicator, tokens, tokens),
     )
-    flagged = _flagged_country_years(indicator)
     return [
         ComparePoint(
             country_code=str(row["country_code"]),
             country_name=str(row["country_name"]),
             year=int(row["year"]),
             indicator=str(row["indicator"]),
-            value=None
-            if (str(row.get("country_code")), int(row["year"])) in flagged
-            else _as_float(row["value"]),
+            value=_as_float(row["value"]),
         )
         for row in rows
     ]
