@@ -1,0 +1,75 @@
+/**
+ * Typed client for the spec-005 analytics read API. This is the ONLY place the dashboard talks to
+ * the network — every component goes through these functions (FR-007), so the endpoint contract
+ * lives in one place and the UI never touches the database directly (FR-005, Principle III).
+ *
+ * Spec 005 hadn't merged when this was built (see specs/006-analytics-dashboard/spec.md "Notes for
+ * the plan phase"), so these types are this client's best-effort match to the 005 "Key Entities"
+ * contract. The /compare row shape and the always-present `model_built` envelope on /benchmark
+ * aren't pinned down verbatim in the spec text — reconcile against the live API once 005 lands.
+ */
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000/api/v1";
+
+export interface CountrySummary {
+  country_code: string;
+  country_name: string;
+}
+
+export interface TimeSeriesPoint {
+  year: number;
+  indicator: string;
+  value: number | null;
+}
+
+export interface CompareRow {
+  country_code: string;
+  country_name: string;
+  year: number;
+  indicator: string;
+  value: number | null;
+}
+
+export type BenchmarkBand = "above" | "near" | "below";
+
+export interface BenchmarkRow {
+  country_code: string;
+  country_name: string;
+  year: number;
+  actual: number;
+  predicted: number;
+  residual: number;
+  band: BenchmarkBand;
+}
+
+export interface BenchmarkResponse {
+  model_built: boolean;
+  rows: BenchmarkRow[];
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE}${path}`);
+  if (!response.ok) {
+    throw new Error(`${path} failed: ${response.status} ${response.statusText}`);
+  }
+  return response.json() as Promise<T>;
+}
+
+export function getCountries(): Promise<CountrySummary[]> {
+  return getJson<CountrySummary[]>("/countries");
+}
+
+export function getTimeSeries(country: string, indicator: string): Promise<TimeSeriesPoint[]> {
+  const params = new URLSearchParams({ country, indicator });
+  return getJson<TimeSeriesPoint[]>(`/timeseries?${params.toString()}`);
+}
+
+export function getCompare(countries: string[], indicator: string): Promise<CompareRow[]> {
+  const params = new URLSearchParams({ countries: countries.join(","), indicator });
+  return getJson<CompareRow[]>(`/compare?${params.toString()}`);
+}
+
+export function getBenchmark(year: number): Promise<BenchmarkResponse> {
+  const params = new URLSearchParams({ year: String(year) });
+  return getJson<BenchmarkResponse>(`/benchmark?${params.toString()}`);
+}
