@@ -3,8 +3,8 @@
 Points at an empty history. The root revision `0001_baseline` is authored in-project; there is
 deliberately nothing in `versions/` yet.
 
-There is exactly one migration history with exactly one head at all times. Every later revision, from
-any feature, descends from the baseline directly or transitively.
+There is exactly one migration history with exactly one head at all times. Every later revision,
+from any feature, descends from the baseline directly or transitively.
 """
 
 from __future__ import annotations
@@ -36,17 +36,17 @@ VERSION_TABLE_SCHEMA = "public"
 def _database_url() -> str:
     """Resolve the database URL from the environment.
 
-    One configuration path, shared with the application, so a migration and the application can never
+    One configuration path, shared with the application, so a migration and the app can never
     disagree about which database they mean, and no credential is committed.
     """
     url = os.environ.get("DATABASE_URL")
     if not url:
-        raise RuntimeError("DATABASE_URL is not set; refusing to run migrations against an unknown database.")
+        raise RuntimeError("DATABASE_URL is not set; refusing to migrate an unknown database.")
     return url
 
 
 def run_migrations_offline() -> None:
-    """Emit SQL to stdout without a live connection, so a reviewer can read what a migration will run."""
+    """Emit SQL to stdout without a live connection, so a reviewer can read what will run."""
     context.configure(
         url=_database_url(),
         target_metadata=target_metadata,

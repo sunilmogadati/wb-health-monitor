@@ -4,10 +4,8 @@ Runs on the HOST (needs wbgapi + pandas, same as explore_wb.py). Output lands un
 backend/data/ which is bind-mounted into the api container at /workspace/backend/data.
 Then load it with:  make ingest   (or scripts/load_wdi.py inside the container)
 """
-import re
 from pathlib import Path
 
-import pandas as pd
 import wbgapi as wb
 
 INDICATORS = {
@@ -41,7 +39,12 @@ def main() -> None:
 
     long["country_code"] = long["economy"]
     long["country_name"] = long["Country"] if "Country" in long.columns else long["economy"]
-    time_col = "time" if "time" in long.columns else ("Time" if "Time" in long.columns else id_cols[-1])
+    if "time" in long.columns:
+        time_col = "time"
+    elif "Time" in long.columns:
+        time_col = "Time"
+    else:
+        time_col = id_cols[-1]
     long["year"] = long[time_col].astype(str).str.extract(r"(\d{4})")[0].astype("Int64")
 
     out = (
