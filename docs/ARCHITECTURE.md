@@ -132,7 +132,10 @@ flowchart TB
 
 ---
 
-## Key decisions (ADR-style summary)
+## Key decisions
+
+The *why* behind this structure lives in the [Architecture Decision Records](adr/README.md); the table
+below is the summary.
 
 | Decision | Choice | Why |
 |---|---|---|
