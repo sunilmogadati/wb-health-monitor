@@ -24,12 +24,11 @@
     "_comment": "domain-agnostic detectors. robust-z ONLY on bounded/unimodal columns — a skewed level variable (GDP) false-positives on genuinely rich/poor entities; use YoY there instead (spec 008 Q4).",
     "entity_key": "country_code",
     "year_key": "year",
-    "robust_z_columns": ["life_expectancy", "fertility_rate", "internet_pct"],
+    "_note": "robust-z + yoy ONLY on life_expectancy — the one column with tight global bounds and a smooth series. fertility/internet/GDP have legitimate wide spread (e.g. Mauritius' low fertility), so robust-z false-positives there; static value_ranges above still catch clear impossibilities for every column.",
+    "robust_z_columns": ["life_expectancy"],
     "robust_z_threshold": 3.5,
     "max_yoy_change": {
-      "life_expectancy": 5.0,
-      "fertility_rate": 1.0,
-      "internet_pct": 25.0
+      "life_expectancy": 5.0
     }
   }
 }

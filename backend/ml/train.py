@@ -62,6 +62,34 @@ def _range_flags(rows: list[dict[str, Any]], ranges: dict[str, Any]) -> list[dic
     return flagged
 
 
+def persist_quality_flags(flags: list[dict[str, Any]]) -> int:
+    """Publish flagged country-year-indicators so the read API serves clean data (spec 008 FR-007).
+
+    One detection, applied everywhere: the same flags that drop rows from training also let
+    `/timeseries` and `/compare` return a gap instead of the bad value. The raw mart stays intact.
+    """
+    records = sorted({(str(f["entity"]), int(f["year"]), str(f["column"])) for f in flags})
+    with connect() as conn, conn.cursor() as cur:
+        cur.execute("CREATE SCHEMA IF NOT EXISTS published")
+        cur.execute("DROP TABLE IF EXISTS published.data_quality_flag")
+        cur.execute(
+            """
+            CREATE TABLE published.data_quality_flag (
+                country_code text NOT NULL,
+                year integer NOT NULL,
+                indicator text NOT NULL,
+                PRIMARY KEY (country_code, year, indicator)
+            )
+            """
+        )
+        cur.executemany(
+            "INSERT INTO published.data_quality_flag (country_code, year, indicator) "
+            "VALUES (%s, %s, %s)",
+            records,
+        )
+    return len(records)
+
+
 def data_quality_gate(df: pd.DataFrame, thresholds: dict[str, Any]) -> pd.DataFrame:
     """Filter anomalous rows; halt only if too many are bad — spec-008 filter + tripwire (FR-007).
 
@@ -209,6 +237,15 @@ def main() -> None:
     # Spec 008 FR-007: filter anomalous rows (tripwire halts only if too many) before training.
     thresholds = checks.load_thresholds()
     df = data_quality_gate(df, thresholds)
+
+    # Serving-quality flags over the FULL mart (incl. incomplete country-years), so /timeseries and
+    # /compare gap every anomalous value — one detection, applied everywhere (spec 008 FR-007).
+    with connect() as conn:
+        full_rows = feature_rows(conn, drop_incomplete=False)
+    serving_flags = _range_flags(full_rows, thresholds["data_quality"].get("value_ranges", {}))
+    serving_flags += checks.detect_anomalies(full_rows, thresholds["anomaly_detection"])
+    n_flags = persist_quality_flags(serving_flags)
+    print(f"published flags -> published.data_quality_flag ({n_flags} country-year-indicators)")
 
     feature_frame, target = df[FEATURES], df[TARGET]
 
