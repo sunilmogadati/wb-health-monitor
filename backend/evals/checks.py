@@ -215,7 +215,9 @@ def robust_z_outliers(values: list[float], threshold: float = 3.5) -> list[int]:
 def detect_anomalies(rows: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
     """Flag anomalous cells with two domain-agnostic detectors (spec 008, question-4 upgrade).
 
-    1. **Population robust-z** — a value far from the column's bulk (no range needed).
+    1. **Population robust-z** — a value far from the column's bulk (no range needed). Apply only to
+       **bounded/unimodal** columns (``robust_z_columns``); on a skewed *level* variable (e.g. GDP per
+       capita) it false-positives on genuinely rich/poor entities, so leave those out.
     2. **Per-entity year-over-year volatility** — a value that jumps implausibly vs its OWN history
        (catches a smoothed series that sawtooths, regardless of the absolute magnitude).
 
@@ -227,7 +229,7 @@ def detect_anomalies(rows: list[dict[str, Any]], config: dict[str, Any]) -> list
     z_threshold = float(config.get("robust_z_threshold", 3.5))
     flagged: list[dict[str, Any]] = []
 
-    for col in config.get("columns", []):
+    for col in config.get("robust_z_columns", config.get("columns", [])):
         present = [(r, float(r[col])) for r in rows if r.get(col) is not None]
         vals = [v for _, v in present]
         for i in robust_z_outliers(vals, z_threshold):

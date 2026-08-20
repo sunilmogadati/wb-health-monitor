@@ -11,6 +11,7 @@
   "data_quality": {
     "min_rows": 200,
     "max_null_rate": 0.0,
+    "max_bad_fraction": 0.05,
     "value_ranges": {
       "life_expectancy": [20.0, 95.0],
       "health_spend_pct_gdp": [0.0, 30.0],
@@ -20,12 +21,10 @@
     }
   },
   "anomaly_detection": {
-    "_comment": "domain-agnostic detectors — catch anomalies without hand-set ranges (spec 008 Q4)",
+    "_comment": "domain-agnostic detectors. robust-z ONLY on bounded/unimodal columns — a skewed level variable (GDP) false-positives on genuinely rich/poor entities; use YoY there instead (spec 008 Q4).",
     "entity_key": "country_code",
     "year_key": "year",
-    "columns": [
-      "life_expectancy", "health_spend_pct_gdp", "gdp_per_capita", "internet_pct", "fertility_rate"
-    ],
+    "robust_z_columns": ["life_expectancy", "fertility_rate", "internet_pct"],
     "robust_z_threshold": 3.5,
     "max_yoy_change": {
       "life_expectancy": 5.0,

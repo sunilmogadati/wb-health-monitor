@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import joblib
 import pandas as pd
+from evals import checks
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
@@ -39,6 +41,77 @@ def load_frame() -> pd.DataFrame:
             "no feature rows — run `make ingest` first (needs the extended indicators)"
         )
     return pd.DataFrame(rows)
+
+
+def _range_flags(rows: list[dict[str, Any]], ranges: dict[str, Any]) -> list[dict[str, Any]]:
+    """Per-row static range violations (the hand-set bounds), as anomaly records."""
+    flagged: list[dict[str, Any]] = []
+    for r in rows:
+        for col, bounds in ranges.items():
+            v = r.get(col)
+            if v is not None and not (float(bounds[0]) <= float(v) <= float(bounds[1])):
+                flagged.append(
+                    {
+                        "entity": r.get("country_code"),
+                        "year": r.get("year"),
+                        "column": col,
+                        "value": v,
+                        "reason": "range",
+                    }
+                )
+    return flagged
+
+
+def data_quality_gate(df: pd.DataFrame, thresholds: dict[str, Any]) -> pd.DataFrame:
+    """Filter anomalous rows; halt only if too many are bad — spec-008 filter + tripwire (FR-007).
+
+    Flags each country-year with (a) static range violations and (b) domain-agnostic detection
+    (robust-z + year-over-year volatility). A large flagged FRACTION means the pull is systemically
+    broken → halt (SC-003); otherwise drop the flagged rows (isolated source errors, e.g. the WB's
+    CAF/SSD life-expectancy glitches) and train on the clean remainder. Returns the cleaned frame.
+    """
+    rows: list[dict[str, Any]] = df.to_dict("records")
+    dq = thresholds["data_quality"]
+    flags = _range_flags(rows, dq.get("value_ranges", {}))
+    flags += checks.detect_anomalies(rows, thresholds["anomaly_detection"])
+
+    flagged_keys = {(f["entity"], f["year"]) for f in flags}
+    fraction = len(flagged_keys) / len(rows) if rows else 0.0
+    for f in sorted(flags, key=lambda x: (str(x["entity"]), x["year"]))[:25]:
+        print(f"  flag  {f['entity']} {f['year']}  {f['column']}={f['value']}  ({f['reason']})")
+
+    max_bad = float(dq.get("max_bad_fraction", 0.05))
+    if fraction > max_bad:
+        raise SystemExit(
+            f"data-quality tripwire: {fraction:.1%} of rows flagged (> {max_bad:.0%}) — halting; "
+            "the pull looks systemically broken (spec 008 FR-007)"
+        )
+
+    clean = df[~df.apply(lambda r: (r["country_code"], r["year"]) in flagged_keys, axis=1)]
+    clean = clean.reset_index(drop=True)
+    min_rows = int(dq.get("min_rows", 0))
+    if len(clean) < min_rows:
+        raise SystemExit(f"only {len(clean)} clean rows (< {min_rows}) — halting (spec 008 FR-007)")
+    print(
+        f"data-quality: dropped {len(flagged_keys)} anomalous country-years "
+        f"({fraction:.1%}); training on {len(clean)} of {len(rows)}"
+    )
+    return clean
+
+
+def _champion_rmse() -> float | None:
+    """The current champion's CV RMSE from saved metadata, or None on the first run."""
+    if not METADATA_PATH.exists():
+        return None
+    try:
+        meta = json.loads(METADATA_PATH.read_text())
+        selected = meta.get("selected_model")
+        for model in meta.get("models", []):
+            if model.get("model") == selected:
+                return float(model["cv_rmse"])
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return None
 
 
 def candidate_models() -> dict:
@@ -132,6 +205,11 @@ def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
 
 def main() -> None:
     df = load_frame()
+
+    # Spec 008 FR-007: filter anomalous rows (tripwire halts only if too many) before training.
+    thresholds = checks.load_thresholds()
+    df = data_quality_gate(df, thresholds)
+
     feature_frame, target = df[FEATURES], df[TARGET]
 
     # Model SELECTION uses 5-fold cross-validated RMSE — robust to a single lucky/unlucky split,
@@ -163,9 +241,19 @@ def main() -> None:
     print(table.to_string(index=False))
 
     winner = table.iloc[0]["model"]
+    winner_rmse = float(table.iloc[0]["cv_rmse"])
     print(f"\nselected: {winner}  (lowest 5-fold CV RMSE — robust to a single split, FR-004)")
 
-    # Fit the winner on ALL rows for the deployed artifact + residuals (best use of a small dataset).
+    # Champion/challenger gate (spec 008 FR-006): promote only if the challenger's CV RMSE is not
+    # worse than the current champion past tolerance — a regressed retrain must not overwrite it.
+    tolerance = float(thresholds["rmse_regression_tolerance"])
+    promotion = checks.should_promote(winner_rmse, _champion_rmse(), tolerance)
+    print(f"promotion: {promotion.detail}")
+    if not promotion.passed:
+        print("keeping the current champion — challenger NOT promoted (spec 008 FR-006)")
+        return
+
+    # Fit the winner on ALL rows for the deployed artifact + residuals (best use of a small set).
     final_model = candidate_models()[winner]
     final_model.fit(feature_frame, target)
 
