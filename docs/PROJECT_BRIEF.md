@@ -21,7 +21,7 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 **Repo:** `github.com/sunilmogadati/wb-health-monitor` (**public**). **Git Flow:** `main` (released) ·
 `develop` (integration) · per-dev `XX-Dev` branches → PRs into `develop`. Step-by-step: `docs/ROADMAP.md`.
 
-**Specs — 001–006 accepted (001–004 built + merged); 007–009 drafted as the production track:**
+**Specs — 001–006 built + merged; 008 substantially built; 007 + 009 drafted (production track):**
 
 | Spec | Status |
 |---|---|
@@ -29,13 +29,17 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 | 002 country-health model + serving (`/predict`, `/brief`) | ✅ built + merged |
 | 003 warehouse star schema (dbt) | ✅ built + merged |
 | 004 AI insights (`/ask`, SQL-tool agent) | ✅ built + merged |
-| **005 analytics read API (backend)** | ⬜ **accepted, in progress (#11)** |
-| **006 analytics dashboard (UI, React/Next.js/Tailwind)** | ⬜ **accepted, in progress (#12), depends on 005** |
-| 007 deployment — AWS (Terraform IaC + CI/CD) | 📝 draft — production track |
-| 008 continuous evaluation & quality gates (CI evals + champion/challenger + data-quality) | 📝 draft — production track |
-| 009 managed MLOps on SageMaker *(alternative to the 007/008 model slice)* | 📝 draft — optional/alternative |
+| 005 analytics read API (backend) | ✅ built + merged |
+| 006 analytics dashboard (UI, React/Next.js/Tailwind) | ✅ built + merged |
+| 008 continuous evaluation & quality gates | 🟩 **built**: deterministic eval gate, anomaly detection (robust-z + YoY), filter+tripwire, champion/challenger, data-quality serving. *Remaining:* LLM-judge + scheduled/CI wiring |
+| 007 deployment — AWS (Terraform IaC + CI/CD) | 📝 draft — needs `/speckit.clarify` |
+| 009 managed MLOps on SageMaker *(alt. to the 007/008 model slice)* | 📝 draft — needs `/speckit.clarify` |
 
-Constitution ratified v1.0.0. The production trio (007–009) builds after 005/006 land. Details in the walkthrough below.
+Also added since the first cut: an **Ask AI** dashboard panel (grounded, cited `/ask`) and **data-quality serving** (the read API returns a gap for flagged anomalies — the `18.8` no longer reaches the UI).
+
+**Open item (deferred):** move the data-quality detection **left** — from `train.py` into the `raw → staging` transform (a dbt cleansing model + a flag table), so the mart is clean at the source and downstream consumers stop re-filtering. Keeps `raw` immutable; flags at the first transform.
+
+Constitution ratified v1.0.0. Details in the walkthrough below.
 
 **Team research (reference, merged):** each contributor's exploration lands under `research/<name>/`
 (models / vector-stores gitignored).
@@ -515,6 +519,23 @@ object store for the lake, warehouse for the queries.
 - **`make seed`** — loads *config*, not data: the **datasource registry** (`ingestion.data_sources` — which indicators, economies, and years to pull) and the dimension seeds (`dim_indicator` codes/units/polarity, `dim_entity` region→country tree).
 - **`make ingest`** — runs the ingestion job: `wbgapi` pulls the registered indicators → writes immutable NDJSON to `raw/…` in MinIO → writes an `ingestion.pull_log` row. Idempotent (a repeat is a *new* pull, never an edit).
 - **`make dbt-build`** — runs **dbt**: loads `raw` (from MinIO) into `staging`, conforms into the `warehouse` star schema, aggregates into `published` marts — and runs **dbt tests** (uniqueness, not-null, ranges, freshness) that **block** promotion on failure.
+- **`make train`** — trains/compares models, applies the **data-quality gate** (filter + tripwire), writes `published.model_residual` **and** `published.data_quality_flag` (so the read API can gap anomalies).
+
+### Running the dashboard (frontend)
+
+The dashboard is a separate **Next.js + Tailwind** app in `frontend/` (spec 006) that calls the read API. It runs on its own dev server — bring the **backend up first** (`make up && make ingest && make dbt-build && make train`), then:
+
+```bash
+nvm use 22                  # Next.js needs Node 18+; the machine default may be older (check: node -v)
+cd frontend
+cp .env.example .env.local  # optional — defaults to NEXT_PUBLIC_API_BASE=http://localhost:8000/api/v1
+npm install
+npm run dev
+```
+
+**Which port?** Next serves on **`http://localhost:3000`** by default. If 3000 is already taken it **auto-increments to 3001** — and **prints the real URL in the terminal**, so always read that line (e.g. `- Local: http://localhost:3001`). The API's CORS already allows both 3000 and 3001; if you ever land on another port, add it to `CORS_ALLOWED_ORIGINS` in `.env` and recreate the container (`docker compose up -d api`).
+
+**Ask AI** needs `ANTHROPIC_API_KEY` in `.env` for real Claude answers; without it, `/ask` returns a grounded, cited *template* (no crash). Frontend checks: `npm run lint`, `npm test` (vitest).
 
 ### Manual-verification cheat-sheet (any DB client, or `make shell` for a container shell)
 
