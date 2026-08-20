@@ -15,6 +15,7 @@ import {
 import { AskPanel } from "@/components/AskPanel";
 import { BenchmarkChart } from "@/components/BenchmarkChart";
 import { CompareChart } from "@/components/CompareChart";
+import { PredictionPanel } from "@/components/PredictionPanel";
 import { TrendChart } from "@/components/TrendChart";
 import { DEFAULT_INDICATOR, INDICATORS } from "@/lib/constants";
 
@@ -136,6 +137,10 @@ export default function DashboardPage() {
 
       <SectionCard title="Ask AI">
         <AskPanel />
+      </SectionCard>
+
+      <SectionCard title="Model prediction &amp; brief">
+        <PredictionPanel countries={countries ?? []} />
       </SectionCard>
 
       <SectionCard title="Value-for-money benchmark">
