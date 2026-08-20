@@ -80,6 +80,44 @@ trains on the **~357 complete country-years** (all four features + target presen
 `life_expectancy` (target), `under5_mortality`, `health_spend_pct_gdp`, `gdp_per_capita`,
 `internet_pct`, `fertility_rate` (`uhc_index` is too sparse, so it's dropped).
 
+### From raw data to model-ready features (libraries, cleaning, feature choices)
+
+**The tools we actually use.** **pandas** does the tabular work — the WB pull (`pull_wdi.py`), the
+train/compare DataFrames and the metrics table (`train.py`), and the single-row frame the API builds for
+a prediction. **scikit-learn** provides three of the four models + the cross-validation and metrics;
+**XGBoost** is the fourth. **NumPy** is present underneath (pandas and scikit-learn compute on NumPy
+arrays — e.g. RMSE is `mse ** 0.5` over an array) but we rarely call it directly. **We do *not* use
+Matplotlib**: charts are rendered in the **browser** by the React/Next.js dashboard (Recharts/Tremor),
+not as server-side PNGs — the platform serves data, the client draws it. A lot of the "reshaping" that
+would otherwise be pandas lives in **SQL/dbt** instead (tidy long WDI rows → one wide country-year row).
+
+**Data cleaning — what we did, honestly.**
+- **Missing values → complete-case, no imputation.** Two passes: the pull drops rows with no
+  value/year (`dropna`), and the feature builder (`feature_rows`, `drop_incomplete=True`) excludes any
+  country-year missing the **target or any feature**. That's why **~357 of ~2,271** rows train — the
+  *simplest honest null policy*: we'd rather train on real rows than **invent** values. Imputation
+  (mean/kNN/model-based) is a documented, deliberate *next* option, not a silent default.
+- **Sparse column dropped.** `uhc_index` is excluded entirely — too many gaps to be useful.
+- **Outliers → not removed, on purpose.** We do **no** outlier trimming. The selected family —
+  **tree ensembles** — is robust to outliers by construction (splits, not distances), which is part of
+  why it beats linear regression here. Explicit outlier handling is a candidate improvement, not a gap
+  we're hiding.
+- **Normalization / scaling → not needed here.** Decision Tree, Random Forest and XGBoost are
+  **scale-invariant**, so we don't standardize. The one model that *would* benefit — Linear Regression —
+  we left unscaled, and it was the weakest anyway; if we leaned on linear/distance models we'd add a
+  `StandardScaler`. Knowing *when scaling matters* is the point.
+
+**Feature engineering — how the features were chosen.** Selection here is **domain-driven and
+deliberately small/interpretable**, not automated. The four predictors are health-economics levers:
+**health spending (% GDP)** — the value-for-money lever itself; **GDP per capita** — wealth/development;
+**internet %** — an infrastructure/development proxy; **fertility rate** — a demographic health-transition
+proxy. Two deliberate *exclusions* are the real teaching points: `uhc_index` (too sparse, above), and —
+importantly — **`under5_mortality` is pulled but *not* used as a predictor**: it's so tightly coupled to
+life expectancy that it would act as a **near-restatement of the target** (leakage-flavoured), inflating
+accuracy without adding insight. We did **not** run automated selection (RFE/Lasso) or build derived
+features (interactions, `log(GDP)`) — both are honest next steps. The empirical check that the small set
+is reasonable comes from the model comparison below (tree ensembles fit it well).
+
 ### The model — selection, evaluation, and what we chose
 
 **How we select.** The pipeline trains four candidates — Linear Regression, Decision Tree, Random
