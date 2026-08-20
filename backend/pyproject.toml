@@ -46,7 +46,7 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["app*", "ml*"]
+include = ["app*", "ai*", "ml*"]
 
 # Ruff configuration lives in the REPOSITORY ROOT (`ruff.toml`), not here, so a single config covers
 # backend/ and its sibling tests/ regardless of a job's working directory.

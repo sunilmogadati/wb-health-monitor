@@ -19,6 +19,7 @@ from ml.brief import CountryHealthBrief, build_brief
 from ml.features import FEATURES, TARGET, connect, country_year_row
 from pydantic import BaseModel
 
+from app.analytics import router as analytics_router
 from app.ask import router as ask_router
 
 API_V1_PREFIX = "/api/v1"
@@ -173,7 +174,8 @@ def create_app() -> FastAPI:
         redoc_url=f"{API_V1_PREFIX}/redoc",
         openapi_url=f"{API_V1_PREFIX}/openapi.json",
     )
-    # CORS so the Next.js/React dashboard (spec 006) can call the read API (spec 005) from its origin.
+    # CORS so the Next.js/React dashboard (spec 006) can call the read API (spec 005)
+    # from its origin.
     origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
     if origins:
         app.add_middleware(
@@ -184,6 +186,7 @@ def create_app() -> FastAPI:
         )
 
     app.include_router(router, prefix=API_V1_PREFIX)
+    app.include_router(analytics_router, prefix=API_V1_PREFIX)
     app.include_router(ask_router, prefix=API_V1_PREFIX)
     return app
 
