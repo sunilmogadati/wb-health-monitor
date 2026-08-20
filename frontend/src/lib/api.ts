@@ -73,3 +73,24 @@ export function getBenchmark(year: number): Promise<BenchmarkResponse> {
   const params = new URLSearchParams({ year: String(year) });
   return getJson<BenchmarkResponse>(`/benchmark?${params.toString()}`);
 }
+
+// --- AI Q&A (spec 004 /ask): a grounded, cited answer over the published mart ---
+
+export interface AskCitation {
+  country_code: string;
+  country_name: string;
+  year: number;
+  indicator: string;
+  value: number;
+}
+
+export interface InsightResponse {
+  answer: string;
+  citations: AskCitation[];
+  caveats: string;
+}
+
+export function getAsk(question: string): Promise<InsightResponse> {
+  const params = new URLSearchParams({ q: question });
+  return getJson<InsightResponse>(`/ask?${params.toString()}`);
+}
