@@ -21,7 +21,7 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 **Repo:** `github.com/sunilmogadati/wb-health-monitor` (**public**). **Git Flow:** `main` (released) ·
 `develop` (integration) · per-dev `XX-Dev` branches → PRs into `develop`. Step-by-step: `docs/ROADMAP.md`.
 
-**Specs — all five accepted; 001–004 built and merged:**
+**Specs — 001–006 accepted (001–004 built + merged); 007–009 drafted as the production track:**
 
 | Spec | Status |
 |---|---|
@@ -31,8 +31,11 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 | 004 AI insights (`/ask`, SQL-tool agent) | ✅ built + merged |
 | **005 analytics read API (backend)** | ⬜ **accepted, in progress (#11)** |
 | **006 analytics dashboard (UI, React/Next.js/Tailwind)** | ⬜ **accepted, in progress (#12), depends on 005** |
+| 007 deployment — AWS (Terraform IaC + CI/CD) | 📝 draft — production track |
+| 008 continuous evaluation & quality gates (CI evals + champion/challenger + data-quality) | 📝 draft — production track |
+| 009 managed MLOps on SageMaker *(alternative to the 007/008 model slice)* | 📝 draft — optional/alternative |
 
-Constitution ratified v1.0.0. Details in the walkthrough below.
+Constitution ratified v1.0.0. The production trio (007–009) builds after 005/006 land. Details in the walkthrough below.
 
 **Team research (reference, merged):** each contributor's exploration lands under `research/<name>/`
 (models / vector-stores gitignored).
@@ -193,6 +196,21 @@ The remaining feature is split into two single-owner specs so two contributors b
 
 Each has its own accepted spec + plan + tasks. Contract (Key Entities) lives in the 005 spec, so 006
 can build against mocks and integrate once 005 lands.
+
+### Then → the production track (specs 007–009, drafted)
+Once the app is complete, three drafted specs make it production-grade:
+
+- **Spec 007 — Deployment (AWS):** the whole platform as **Terraform IaC + GitHub Actions CI/CD** —
+  ECS Fargate (API + dashboard) behind an ALB, RDS, S3 (a drop-in for the object store), the batch
+  pipeline as a scheduled task, secrets in Secrets Manager.
+- **Spec 008 — Continuous evaluation & quality gates:** evals in **CI** (grounding, citations, decline,
+  schema, and the honest-framing rule as an automated check) + **continuous** in the pipeline
+  (**champion/challenger** on the model, a **data-quality gate**, and periodic re-eval for drift).
+- **Spec 009 — Managed MLOps on SageMaker** *(optional alternative)*: the model's lifecycle
+  (train → register → gate → serve → monitor) on managed SageMaker primitives instead of the DIY
+  007/008 model slice — the managed way, shown alongside the hand-rolled one.
+
+These build **after** 005/006 land; 009 is an alternative to the 007/008 *model* slice, not additive.
 
 ---
 
