@@ -94,3 +94,39 @@ export function getAsk(question: string): Promise<InsightResponse> {
   const params = new URLSearchParams({ q: question });
   return getJson<InsightResponse>(`/ask?${params.toString()}`);
 }
+
+// --- Model prediction + country brief (spec 002 /predict, /brief) — the ML surfaced directly ---
+
+export type Performance = "above_expected" | "near_expected" | "below_expected";
+
+export interface CountryBrief {
+  country_code: string;
+  country_name: string;
+  year: number;
+  indicators: Record<string, number | null>;
+  predicted_life_expectancy: number;
+  actual_life_expectancy: number;
+  residual: number;
+  performance_vs_spend: Performance;
+  summary: string;
+}
+
+export interface Prediction {
+  country_code: string;
+  country_name: string;
+  year: number;
+  indicators: Record<string, number | null>;
+  predicted_life_expectancy: number;
+  actual_life_expectancy: number | null;
+  model: string;
+}
+
+export function getBrief(country: string, year: number): Promise<CountryBrief> {
+  const params = new URLSearchParams({ country, year: String(year) });
+  return getJson<CountryBrief>(`/brief?${params.toString()}`);
+}
+
+export function getPrediction(country: string, year: number): Promise<Prediction> {
+  const params = new URLSearchParams({ country, year: String(year) });
+  return getJson<Prediction>(`/predict?${params.toString()}`);
+}
