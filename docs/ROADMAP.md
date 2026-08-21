@@ -1,4 +1,12 @@
-# Project Guide — Step by Step
+# Project Guide — Step by Step (historical build sequence)
+
+> **⚠️ This is the original build guide (specs 001–005 era) — kept for the "how we work / SDD" story.
+> It does NOT reflect current status.** The project has since built specs **001–012** (read API,
+> dashboard, AI insights, forecast, continuous eval, agent, AWS deployment, + SageMaker/MWAA
+> alt-tracks). **For the authoritative current state, see the Build-status table in
+> [`PROJECT_BRIEF.md`](PROJECT_BRIEF.md); for the architecture, [`ARCHITECTURE.md`](ARCHITECTURE.md).**
+> Note the numbering here predates the 005/006 split: **005 is the Analytics Read *API*; 006 is the
+> dashboard.**
 
 The one place that tells you **what we're building, how we work, and exactly what to do next.**
 Read "How we work" once, then follow the phases in order.

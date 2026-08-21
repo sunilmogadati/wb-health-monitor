@@ -2,13 +2,14 @@
 
 The WB Health-Systems Performance Monitor, described in the standard architecture **views**. Each view
 answers a different question; together they are the reference architecture. Diagrams are Mermaid so they
-live in git and render on GitHub. Views marked *(planned)* describe the target deployment (spec 007).
+live in git and render on GitHub. The Deployment + Network views are the **built** AWS infra (spec 007),
+`terraform apply`-verified live on 2026-08-21.
 
 - [1. System context](#1-system-context) — who and what the system talks to
 - [2. Container / application](#2-container--application) — the running pieces
 - [3. Data architecture](#3-data-architecture) — how data flows through the zones
-- [4. Deployment *(planned)*](#4-deployment-planned) — the runtime on AWS
-- [5. Network *(planned)*](#5-network-planned) — VPC, subnets, trust boundaries
+- [4. Deployment (AWS)](#4-deployment-aws) — the runtime on AWS
+- [5. Network](#5-network) — VPC, subnets, trust boundaries
 
 ---
 
@@ -80,8 +81,9 @@ flowchart LR
     model --> pub
 ```
 
-## 4. Deployment (AWS) — built, `terraform validate`- and `plan`-clean (spec 007 v1.2.0)
+## 4. Deployment (AWS)
 
+Built for spec 007 (v1.2.0) — `terraform apply`-verified live on AWS (2026-08-21), then torn down.
 The whole platform as Terraform (`infra/`) + CI/CD. The **dashboard is a static export on S3 +
 CloudFront** (no web container); CloudFront routes `/api/*` to the ALB so the browser hits the API
 **same-origin**. The batch pipeline is a **scheduled Fargate task**, not a service. Every top-level
@@ -127,7 +129,7 @@ flowchart TB
 `infra/sagemaker/` (spec 009, managed model lifecycle) and `infra/mwaa/` (spec 012, managed Airflow
 orchestration) each replace one slice of the above; adopt deliberately, not by default.
 
-## 5. Network — VPC, subnets, security groups, VPC endpoints (spec 007 v1.2.0)
+## 5. Network
 
 Only CloudFront/ALB are internet-facing; compute + data sit in **private subnets**. Security groups
 chain ALB → tasks → RDS. **VPC endpoints** keep task↔AWS-service traffic off the NAT (S3 via a free

@@ -1,5 +1,12 @@
 # WB Health-Systems Performance Monitor — Project Brief
 
+> **📍 Authoritative current status = the [Build status](#build-status-2026-08-19) table below.** The
+> later "Where we are / Next / building toward" narrative (Parts 5, 7, 7½) is the **original build
+> story and is intentionally historical** — where it uses future tense or older names
+> (`published.rpt_*`, `dim_entity`, `make build`), the table + Part 6 are correct. Everything through
+> spec **012** is built; the AWS stack was **deployed + verified live** on 2026-08-21 (see
+> `docs/DEPLOYMENT.md`).
+
 **Project:** World Bank **Health-Systems Performance Monitor**
 **Audience:** the engineering team building this project.
 **Status:** the *what & why*. The build **method** (spec-driven, test-driven, ticket-owned) is in the companion **Spec-Kit Method** doc.
@@ -21,7 +28,8 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 **Repo:** `github.com/sunilmogadati/wb-health-monitor` (**public**). **Git Flow:** `main` (released) ·
 `develop` (integration) · per-dev `XX-Dev` branches → PRs into `develop`. Step-by-step: `docs/ROADMAP.md`.
 
-**Specs — 001–006 built + merged; 008 substantially built; 007 + 009 drafted (production track):**
+**Specs — 001–006, 008, 010, 011 built + merged; 007 accepted + deployed-live; 009 (SageMaker) + 012
+(MWAA) accepted as documented alternative tracks:**
 
 | Spec | Status |
 |---|---|

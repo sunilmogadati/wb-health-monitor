@@ -102,6 +102,25 @@ Anyone can run the whole thing from a clean clone.
 - **Documented.** README + architecture docs stay in sync with behavior; the demo is
   reproducible.
 
+### VII. Change Traceability (NON-NEGOTIABLE)
+
+Every change that alters behavior MUST trace to an approved artifact before it merges. A change made
+*around* the process rather than *through* it is a defect, regardless of code quality. Route each
+change to one of four lanes:
+
+- **Bug** (code ≠ an existing spec) → fix **+ a regression test that names the FR it violated**. No
+  new spec.
+- **Spec-miss** (a real requirement no spec captured) → a **versioned amendment** to the owning spec
+  (bump its version), then re-run the affected `plan`/`tasks`.
+- **New capability** → a **new spec** via the full lifecycle (`specify → clarify → plan → tasks →
+  implement`).
+- **Refactor** (behavior unchanged) → an **ADR** under `docs/adr/`.
+- **Trivial / non-behavioral** (typos, formatting, comments, config) → exempt.
+
+Enforced mechanically: a CI gate (`scripts/check_traceability.py`, ADR-0008) **blocks** a PR whose
+behavior change carries no spec, ADR, or FR-named test; the PR template keeps spec status/tasks/version
+reconciled *in the same PR* (no "later"). An orphan behavior change blocks.
+
 ## Scope & Data Boundaries
 
 - **In scope:** WB WDI health/economic indicators; country and WB-region level; the four core
@@ -132,7 +151,7 @@ This constitution supersedes ad-hoc convention where they conflict.
 - **Authority.** All principles are binding gates. The `## Constitution Check` of the plan
   template MUST be evaluated against them, and `/speckit.analyze` treats a conflict with a MUST
   as CRITICAL. Violations are resolved by changing the spec, plan, or tasks — never by diluting
-  a principle. Principles I, II, and V are **NON-NEGOTIABLE**.
+  a principle. Principles I, II, V, and VII are **NON-NEGOTIABLE**.
 - **Amendments.** Changes require a PR with rationale, team approval, and a version bump per the
   policy below, with the change recorded in the Sync Impact Report at the top of this file and
   propagated to dependent templates.
@@ -142,4 +161,7 @@ This constitution supersedes ad-hoc convention where they conflict.
 - **Compliance review.** Every PR verifies compliance with these principles; any deviation MUST
   be justified in-PR. Unjustified violations block merge.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-18
+**Version**: 1.1.0 | **Ratified**: 2026-08-18 | **Last Amended**: 2026-08-21
+
+*1.1.0 (2026-08-21): added Principle VII — Change Traceability (NON-NEGOTIABLE) + the four-lane
+router; enforced by ADR-0008's CI gate. MINOR bump (new principle).*

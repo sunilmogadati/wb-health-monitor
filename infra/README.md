@@ -1,16 +1,17 @@
 # infra/ — AWS deployment (spec 007)
 
-Terraform for the whole platform on AWS: **ECS Fargate** (API + dashboard behind one **ALB**),
-**RDS Postgres**, **S3** (raw zone + model artifacts), a **scheduled Fargate task** for the batch
-pipeline, **Secrets Manager**, and a **GitHub OIDC** deploy role. CI/CD is `.github/workflows/deploy.yml`.
+Terraform for the whole platform on AWS: **ECS Fargate** (API) behind an **ALB**; the **dashboard** is
+a **static export served from S3 + CloudFront** (no web container); **RDS Postgres**, **S3** (raw zone
++ model artifacts), a **scheduled Fargate task** for the batch pipeline, **Secrets Manager**, and a
+**GitHub OIDC** deploy role. CI/CD is `.github/workflows/deploy.yml`.
 
-> **Status: validated, not applied.** `terraform fmt` + `terraform validate` **pass** on both roots
-> (`infra/` and `infra/sagemaker/`, AWS provider ~5.40) — the config is well-formed and
-> provider-schema-correct. It has **not** been `plan`/`apply`'d against an AWS account (no credentials,
-> and `apply` is billable), so account-specific issues (IAM policy evaluation, name collisions, real
-> API behavior) are still surfaced by the first `terraform plan`. The credentialed session:
-> uncomment the S3 backend → `init` → `plan` (reconcile anything it flags) → `apply`. Sizes default to
-> the smallest workable (single-AZ) for a demo.
+> **Status: validated + deployed live (demo), then torn down.** `terraform fmt`/`validate`/`plan`/
+> `apply` all pass; the full 60-resource stack was **applied to AWS and verified end-to-end** on
+> 2026-08-21 (dashboard via CloudFront, API via ALB→ECS on ARM64/Fargate, pipeline seeded on Fargate,
+> `/predict` `/forecast` `/ask` all serving real data) — then removed with `./infra/teardown.sh`. The
+> IaC is the durable artifact; a running stack is stood up on demand. State is local
+> (`terraform.tfstate`) for the demo; uncomment the S3 backend for a durable environment. Sizes default
+> to the smallest workable (single-AZ).
 
 ## What maps where
 

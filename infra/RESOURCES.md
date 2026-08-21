@@ -1,7 +1,9 @@
 # Resource inventory — what `terraform apply` creates, and what it costs
 
-The default `infra/` plan creates **60 resources**. **`./infra/teardown.sh`** (or `terraform destroy`)
-removes all of them — that is the exact undo. This file is the human-readable list + the honest cost.
+The default `infra/` plan creates **~60 top-level resources** (65 with `count`/`for_each` instances
+expanded — run `terraform state list` for the exact live set). **`./infra/teardown.sh`** (or
+`terraform destroy`) removes all of them — that is the exact undo. This file is the human-readable list
++ the honest cost. *(Section subtotals below are approximate groupings, not exact counts.)*
 
 ## What actually bills (the ~$100/mo)
 

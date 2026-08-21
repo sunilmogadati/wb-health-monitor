@@ -1,5 +1,10 @@
 # Data & Storage — where the data comes from, and where it lives
 
+> **Note on the shipped raw format:** the raw zone lands **one CSV per pull** —
+> `world_bank_wdi/pull_<id>/wdi_observation.csv` (MinIO locally, S3 in the cloud). Where this doc says
+> "NDJSON" or a per-indicator key scheme, treat it as the earlier design; the code
+> (`backend/scripts/load_wdi.py`) writes the per-pull CSV above.
+
 Two questions this doc answers:
 
 1. **Where does the data come from?** → the World Bank open data API, via the `wbgapi` client.
