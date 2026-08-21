@@ -15,6 +15,7 @@ import {
   getForecastSeries,
   getTimeSeries,
 } from "@/lib/api";
+import { AgentPanel } from "@/components/AgentPanel";
 import { AskPanel } from "@/components/AskPanel";
 import { BenchmarkChart } from "@/components/BenchmarkChart";
 import { CompareChart } from "@/components/CompareChart";
@@ -179,6 +180,13 @@ export default function DashboardPage() {
         hint="Ask a plain-English question — you get a grounded answer plus the exact rows behind it. Works for trends, comparisons, and value-for-money."
       >
         <AskPanel />
+      </SectionCard>
+
+      <SectionCard
+        title="AI agent (multi-step)"
+        hint="A LangGraph agent that plans, calls several tools in sequence, then answers — and shows you the steps it took. Use it for multi-part questions (a trend AND a comparison) that the single-shot Ask AI can't chain."
+      >
+        <AgentPanel />
       </SectionCard>
 
       <SectionCard

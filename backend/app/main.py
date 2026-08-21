@@ -20,6 +20,7 @@ from ml.features import FEATURES, TARGET, connect, country_history, country_year
 from ml.forecast import INTERVAL_METHOD, forecast_features, indicative_interval
 from pydantic import BaseModel
 
+from app.agent import router as agent_router
 from app.analytics import router as analytics_router
 from app.ask import router as ask_router
 
@@ -374,6 +375,7 @@ def create_app() -> FastAPI:
     app.include_router(router, prefix=API_V1_PREFIX)
     app.include_router(analytics_router, prefix=API_V1_PREFIX)
     app.include_router(ask_router, prefix=API_V1_PREFIX)
+    app.include_router(agent_router, prefix=API_V1_PREFIX)
     return app
 
 
