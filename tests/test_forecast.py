@@ -152,3 +152,46 @@ def test_forecast_unknown_country_returns_404(monkeypatch) -> None:
     response = client.get("/api/v1/forecast?country=ZZZ&year=2028")
 
     assert response.status_code == 404
+
+
+# --- forecast series for the trend chart (FR-010, SC-006) ----------------------------------------
+
+
+def test_forecast_series_life_expectancy_uses_the_model(monkeypatch) -> None:
+    client = _wire(monkeypatch, latest=2022, history=_history())
+    response = client.get("/api/v1/forecast/series?country=KEN&indicator=life_expectancy")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["basis"] == "model"
+    assert [p["year"] for p in body["points"]] == [2023, 2024, 2025, 2026, 2027, 2028]
+    assert all(p["value"] == 64.7 for p in body["points"])  # FakeModel
+
+
+def test_forecast_series_feature_uses_trend_projection(monkeypatch) -> None:
+    client = _wire(monkeypatch, latest=2022, history=_history())
+    response = client.get("/api/v1/forecast/series?country=KEN&indicator=health_spend_pct_gdp")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["basis"] == "trend"
+    assert len(body["points"]) == 6
+    assert all(p["value"] > 0 for p in body["points"])
+    assert "input" in body["caveat"].lower()
+
+
+def test_forecast_series_non_projectable_indicator_returns_none_basis(monkeypatch) -> None:
+    client = _wire(monkeypatch, latest=2022, history=_history())
+    response = client.get("/api/v1/forecast/series?country=KEN&indicator=under5_mortality")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["basis"] == "none"
+    assert body["points"] == []
+
+
+def test_forecast_series_unknown_country_returns_404(monkeypatch) -> None:
+    client = _wire(monkeypatch, latest=2022, history=[])
+    response = client.get("/api/v1/forecast/series?country=ZZZ&indicator=life_expectancy")
+
+    assert response.status_code == 404
