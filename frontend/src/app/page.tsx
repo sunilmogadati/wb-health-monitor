@@ -33,10 +33,23 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: ReactNode }) {
+function SectionCard({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">{title}</h2>
+      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
+      {hint ? (
+        <p className="mb-4 mt-1 text-xs text-slate-500">{hint}</p>
+      ) : (
+        <div className="mb-4" />
+      )}
       {children}
     </section>
   );
@@ -121,11 +134,14 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
-      <header>
+      <header className="space-y-2">
         <h1 className="text-2xl font-bold text-slate-900">Health &amp; Spending Analytics</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Value-for-money benchmarking, indicator trends, and country comparisons over the published
-          World Bank health data — an association with spending, never a causal or performance claim.
+        <p className="text-sm text-slate-600">
+          Sub-Saharan Africa, 2015–2022 (World Bank public data). Ask a plain-English question, see
+          the model&apos;s prediction for a country, and explore value-for-money, indicator trends, and
+          comparisons. Every figure is an <strong>association with health spending — never a causal or
+          performance judgement</strong> (&ldquo;above/below what spending predicts&rdquo;, not
+          &ldquo;best/worst&rdquo;).
         </p>
       </header>
 
@@ -135,15 +151,24 @@ export default function DashboardPage() {
         />
       )}
 
-      <SectionCard title="Ask AI">
+      <SectionCard
+        title="Ask AI"
+        hint="Ask a plain-English question — you get a grounded answer plus the exact rows behind it. Works for trends, comparisons, and value-for-money."
+      >
         <AskPanel />
       </SectionCard>
 
-      <SectionCard title="Model prediction &amp; brief">
+      <SectionCard
+        title="Model prediction &amp; brief"
+        hint="The model predicts what life expectancy a country should have given its spending and context; the gap to actual is the value-for-money residual. Years 2015–2022 only — the model reads each year's real inputs, so it can't forecast the future."
+      >
         <PredictionPanel countries={countries ?? []} />
       </SectionCard>
 
-      <SectionCard title="Value-for-money benchmark">
+      <SectionCard
+        title="Value-for-money benchmark"
+        hint="Countries ranked by residual (actual − predicted life expectancy). Right of centre = more life expectancy than spending predicts; left = less. Never best/worst."
+      >
         <label className="mb-3 block text-sm text-slate-700">
           Year{" "}
           <select
@@ -163,7 +188,10 @@ export default function DashboardPage() {
         {!benchmarkError && !benchmark && <p className="text-sm text-slate-500">Loading…</p>}
       </SectionCard>
 
-      <SectionCard title="Indicator trend">
+      <SectionCard
+        title="Indicator trend"
+        hint="One country's indicator over the years. A gap in the line is a value the data-quality gate removed as an anomaly."
+      >
         <div className="mb-3 flex flex-wrap gap-4 text-sm text-slate-700">
           <label>
             Country{" "}
@@ -205,7 +233,10 @@ export default function DashboardPage() {
         {!trendError && !trendPoints && <p className="text-sm text-slate-500">Loading…</p>}
       </SectionCard>
 
-      <SectionCard title="Compare countries">
+      <SectionCard
+        title="Compare countries"
+        hint="Several countries on one indicator, over time — select countries below to overlay them."
+      >
         <div className="mb-3 space-y-2 text-sm text-slate-700">
           <label className="block">
             Indicator{" "}
