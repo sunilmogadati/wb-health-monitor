@@ -32,6 +32,7 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 | 005 analytics read API (backend) | ✅ built + merged |
 | 006 analytics dashboard (UI, React/Next.js/Tailwind) | ✅ built + merged |
 | 008 continuous evaluation & quality gates | 🟩 **built**: deterministic eval gate, anomaly detection (robust-z + YoY), filter+tripwire, champion/challenger, data-quality serving. *Remaining:* LLM-judge + scheduled/CI wiring |
+| 010 life-expectancy forecast (`/forecast` — project inputs → predict future years) | 🟩 **built**: per-feature linear trend + clamps, forecast endpoint, UI forecast card (2023–2028) |
 | 007 deployment — AWS (Terraform IaC + CI/CD) | 📝 draft — needs `/speckit.clarify` |
 | 009 managed MLOps on SageMaker *(alt. to the 007/008 model slice)* | 📝 draft — needs `/speckit.clarify` |
 

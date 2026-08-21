@@ -6,7 +6,7 @@ import { PredictionPanel } from "../PredictionPanel";
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof api>();
-  return { ...actual, getPrediction: vi.fn(), getBrief: vi.fn() };
+  return { ...actual, getPrediction: vi.fn(), getBrief: vi.fn(), getForecast: vi.fn() };
 });
 
 const COUNTRIES = [{ country_code: "KEN", country_name: "Kenya" }];
@@ -46,5 +46,33 @@ describe("PredictionPanel", () => {
     expect(screen.getByText(/near what spending predicts/)).toBeInTheDocument();
     expect(screen.getByText(/Kenya is near what its spending predicts/)).toBeInTheDocument();
     expect(screen.getByText(/random_forest/)).toBeInTheDocument();
+  });
+
+  it("shows a labelled forecast with projected inputs for a future year", async () => {
+    vi.mocked(api.getForecast).mockResolvedValue({
+      country_code: "KEN",
+      country_name: "Kenya",
+      year: 2028,
+      projected_indicators: { health_spend_pct_gdp: 5.1, internet_pct: 100.0 },
+      forecast_life_expectancy: 64.7,
+      is_forecast: true,
+      based_on_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
+      caveat: "Forecast, not an observation. Read as a scenario — 'if current trends hold'.",
+      model: "random_forest",
+    });
+
+    const user = userEvent.setup();
+    render(<PredictionPanel countries={COUNTRIES} />);
+    const [countrySelect, yearSelect] = screen.getAllByRole("combobox");
+    await user.selectOptions(countrySelect, "KEN");
+    await user.selectOptions(yearSelect, "2028");
+    await user.click(screen.getByRole("button", { name: /forecast & explain/i }));
+
+    expect(await screen.findByText(/64\.7 yrs/)).toBeInTheDocument();
+    expect(screen.getByText(/Forecast · 2028/)).toBeInTheDocument();
+    expect(screen.getByText(/if current trends hold/)).toBeInTheDocument();
+    expect(screen.getByText(/health_spend_pct_gdp:/)).toBeInTheDocument();
+    // The forecast path must NOT hit the observed-year endpoints.
+    expect(api.getPrediction).not.toHaveBeenCalled();
   });
 });
