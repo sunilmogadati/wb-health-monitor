@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from evals import checks, judge, run
+from evals import checks, judge, run, select_model
 
 # --- fixtures ---------------------------------------------------------------------------------
 
@@ -281,3 +281,72 @@ def test_run_judge_off_by_default() -> None:
     case = {"id": "x", "target": "ask", "expect": {"decline": False}}
     results = run.evaluate_case(ASK_GROUNDED, case, thresholds)
     assert all(r.name != "groundedness" for r in results)
+
+
+# --- FR-012 expected key-facts (deterministic) ------------------------------------------------
+
+def test_answer_contains_any_passes_when_a_key_fact_is_present() -> None:
+    result = checks.answer_contains_any("Kenya's life expectancy is increasing.", ["increas"])
+    assert result.passed
+
+
+def test_answer_contains_any_fails_on_a_grounded_row_dump() -> None:
+    # The exact regression: a grounded dump with none of the direction words → fails (SC-008).
+    dump = "Based on the published mart: Kenya 2015 life_expectancy=62.3; Kenya 2022 =63.5."
+    result = checks.answer_contains_any(dump, ["increas", "rising", "rose"])
+    assert not result.passed
+
+
+def test_answer_contains_any_empty_options_is_a_pass() -> None:
+    assert checks.answer_contains_any("anything", []).passed
+
+
+def test_ask_case_with_missing_key_fact_fails_the_case() -> None:
+    thresholds = checks.load_thresholds()
+    expect = {"decline": False, "contains_any": ["increas"]}
+    case = {"id": "trend", "target": "ask", "expect": expect}
+    dump = {"answer": "Kenya 2015 =62.3; 2022 =63.5.", "citations": [{"x": 1}], "caveats": ""}
+    # run_judge=True = the "a real model answered" regime where key-facts are asserted (FR-012).
+    results = run.evaluate_case(dump, case, thresholds, run_judge=True)
+    assert any(r.name == "answer_contains" and not r.passed for r in results)
+
+
+# --- FR-013 helpfulness judge -----------------------------------------------------------------
+
+def test_helpfulness_result_carries_its_dimension() -> None:
+    result = judge.result_from_score(0.9, 0.7, "direct answer", dimension="helpfulness")
+    assert result.name == "helpfulness"
+    assert result.passed
+
+
+def test_judge_helpfulness_never_vacuous_pass_when_unavailable(monkeypatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    result = judge.judge_helpfulness("q", "a row dump", floor=0.7)
+    assert not result.passed
+    assert "not evaluated" in result.detail
+
+
+# --- FR-014 LLM champion/challenger selection rule --------------------------------------------
+
+def test_select_prefers_lowest_cost_among_qualified() -> None:
+    rows = [
+        {"model": "cheap", "quality": 0.9, "price_out": 5.0, "latency_s": 3.0},
+        {"model": "pricey", "quality": 0.95, "price_out": 25.0, "latency_s": 1.0},
+    ]
+    assert select_model.select(rows, quality_floor=0.8)["model"] == "cheap"
+
+
+def test_select_breaks_ties_on_latency() -> None:
+    rows = [
+        {"model": "slow", "quality": 0.9, "price_out": 5.0, "latency_s": 4.0},
+        {"model": "fast", "quality": 0.9, "price_out": 5.0, "latency_s": 1.0},
+    ]
+    assert select_model.select(rows, quality_floor=0.8)["model"] == "fast"
+
+
+def test_select_falls_back_to_best_quality_when_none_clear_the_floor() -> None:
+    rows = [
+        {"model": "a", "quality": 0.5, "price_out": 1.0, "latency_s": 1.0},
+        {"model": "b", "quality": 0.7, "price_out": 25.0, "latency_s": 9.0},
+    ]
+    assert select_model.select(rows, quality_floor=0.8)["model"] == "b"

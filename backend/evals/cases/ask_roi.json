@@ -1,0 +1,8 @@
+{
+  "id": "ask_roi_best",
+  "target": "ask",
+  "query": "Which country has the best ROI for healthcare?",
+  "expect": {
+    "decline": false
+  }
+}

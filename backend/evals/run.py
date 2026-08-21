@@ -56,6 +56,15 @@ def evaluate_case(
         results.append(checks.decline_behaviour(payload, declined))
         if not declined:
             results.append(checks.has_citations(payload))
+            # Key-facts test the LLM's answer content, which exists only when a real model
+            # answered (keyless, /ask returns a fixed template). Assert it in the same regime as
+            # the judges, or a no-key scheduled run would falsely fail on the template text.
+            if run_judge and expect.get("contains_any"):
+                results.append(
+                    checks.answer_contains_any(
+                        str(payload.get("answer", "")), list(expect["contains_any"])
+                    )
+                )
     elif target == "brief":
         results.append(checks.brief_schema_valid(payload))
         tol = thresholds["numbers_tolerance"]
@@ -74,15 +83,15 @@ def _judge_results(
     from evals import judge
 
     floor = float(thresholds.get("groundedness_floor", 0.7))
+    help_floor = float(thresholds.get("helpfulness_floor", 0.7))
     target = case["target"]
     if target == "ask" and not case.get("expect", {}).get("decline", False):
+        query = str(case.get("query", ""))
+        answer = str(payload.get("answer", ""))
         return [
-            judge.judge_groundedness(
-                str(case.get("query", "")),
-                str(payload.get("answer", "")),
-                list(payload.get("citations", [])),
-                floor,
-            )
+            judge.judge_groundedness(query, answer, list(payload.get("citations", [])), floor),
+            # Groundedness alone passes a grounded-but-useless row dump; helpfulness catches it.
+            judge.judge_helpfulness(query, answer, help_floor),
         ]
     if target == "brief":
         cite = [

@@ -76,3 +76,19 @@ automated check.
 
 - Depends on 002 + 004 existing (they do). **Best built after 005/006** (so the read API/dashboard are
   stable) and **alongside 007** (it plugs into that CI/CD + pipeline). It is not a jr first ticket.
+
+## v2.0.0 amendment — LLM output evaluation & selection (FR-012/013/014)
+
+Three additions, each reusing existing machinery:
+- **FR-012 golden regression cases** — new `evals/cases/` files for the answer *types* that regressed
+  (trend, value-for-money, ROI) + a deterministic `checks.answer_contains_any` asserting expected
+  key-facts. A grounded row dump lacks the direction word → fails. Cheap, on the free gate.
+- **FR-013 helpfulness judge** — a second judged dimension (`judge.judge_helpfulness`) beside
+  groundedness; same discipline (pinned model, floor, not-evaluated-fail). The rubric is
+  **context-aware**: SSA-only data scope and value-for-money framing are correct-by-design and must
+  not be penalised (found in the live run — the judge first failed correct answers, so the rubric was
+  tightened, then 6/6 passed).
+- **FR-014 LLM champion/challenger** — `evals/select_model.py` scores candidate models on the golden
+  eval (quality) + price table (cost) + measured latency, selects by quality-floor→cost→latency, and
+  writes `evals/llm_selection.json`. The answer model is env-configurable (`ASK_MODEL`), so adopting
+  the champion is config, not code. Manual/periodic (paid), never a per-PR gate. Mirrors `train.py`.

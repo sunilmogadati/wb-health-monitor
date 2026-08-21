@@ -1,0 +1,9 @@
+{
+  "id": "ask_value_for_money_leaders",
+  "target": "ask",
+  "query": "Which countries get the most life expectancy for their health spending?",
+  "expect": {
+    "decline": false,
+    "contains_any": ["spend", "gdp", "value", "%", "per "]
+  }
+}

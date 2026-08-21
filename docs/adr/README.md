@@ -18,5 +18,6 @@ ADRs are **append-only**: don't edit a decided one; supersede it with a new reco
 | [0006](0006-object-store-minio-s3.md) | Object store: MinIO local → S3 cloud | Accepted |
 | [0007](0007-data-quality-at-staging.md) | Data-quality detection at the staging boundary (shift-left) | Accepted |
 | [0008](0008-traceability-ci-gate.md) | Enforce Change-Traceability with a CI gate | Accepted |
+| [0009](0009-llm-selection.md) | LLM selection criteria (champion/challenger scored on the golden eval) | Accepted |
 
 **Template:** Title · Status · Date · Context · Decision · Alternatives considered · Consequences.

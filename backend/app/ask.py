@@ -14,5 +14,10 @@ router = APIRouter(tags=["insights"])
 )
 def ask(
     q: str = Query(..., min_length=1, description="A plain-English question about the health data"),
+    model: str | None = Query(
+        None,
+        description="Optional answer-model override (spec 008 FR-014 selection harness); an "
+        "unknown value falls back to the configured champion.",
+    ),
 ) -> InsightResponse:
-    return answer_question(q)
+    return answer_question(q, model=model)

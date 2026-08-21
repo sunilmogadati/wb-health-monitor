@@ -81,6 +81,22 @@ def has_citations(ask_response: dict[str, Any]) -> CheckResult:
     return CheckResult("has_citations", True, f"{len(ask_response['citations'])} citation(s)")
 
 
+def answer_contains_any(text: str, options: list[str]) -> CheckResult:
+    """The answer must contain at least one expected key-fact substring (FR-012).
+
+    Catches a *grounded-but-empty/wrong* answer that the citation/decline checks miss: a trend
+    question whose answer is a raw row dump never contains "increasing"/"rising". Case-insensitive
+    substring match; empty ``options`` is a pass (nothing asserted).
+    """
+    if not options:
+        return CheckResult("answer_contains", True, "no key-facts asserted")
+    low = text.lower()
+    hits = [o for o in options if o.lower() in low]
+    if hits:
+        return CheckResult("answer_contains", True, f"found {hits[0]!r}")
+    return CheckResult("answer_contains", False, f"none of {options} present in the answer")
+
+
 def decline_behaviour(ask_response: dict[str, Any], should_decline: bool) -> CheckResult:
     """Assert /ask declines exactly when the case says it should (out-of-scope/unanswerable)."""
     declined = is_decline(ask_response)

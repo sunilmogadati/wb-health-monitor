@@ -31,7 +31,7 @@ You build it as a **team**, as a real ticketed project — not a throwaway noteb
 | 004 AI insights (`/ask`, SQL-tool agent) | ✅ built + merged |
 | 005 analytics read API (backend) | ✅ built + merged |
 | 006 analytics dashboard (UI, React/Next.js/Tailwind) | ✅ built + merged |
-| 008 continuous evaluation & quality gates | 🟩 **built**: deterministic eval gate, anomaly detection (robust-z + YoY), filter+tripwire, champion/challenger, data-quality serving. *Remaining:* LLM-judge + scheduled/CI wiring |
+| 008 continuous evaluation & quality gates | 🟩 **built** (v2.0.0): deterministic gate, anomaly detection (robust-z + YoY), filter+tripwire, ML champion/challenger, data-quality serving, LLM-judge (**groundedness + helpfulness**), scheduled/CI wiring, **golden regression cases + expected key-facts**, **LLM champion/challenger** (`select_model.py` → `ADR-0009`, picks by quality→cost→latency) |
 | 010 life-expectancy forecast (`/forecast` — project inputs → predict future years) | 🟩 **built** (v1.2.0): per-feature linear trend + clamps, forecast endpoint, UI forecast card (2023–2028) + **indicative interval** (cv_rmse widened by horizon) + **trend-chart projection** (`/forecast/series` — dashed model/trend continuation, honest basis disclosure) |
 | 007 deployment — AWS (Terraform IaC + CI/CD) | 📝 draft — needs `/speckit.clarify` |
 | 009 managed MLOps on SageMaker *(alt. to the 007/008 model slice)* | 📝 draft — needs `/speckit.clarify` |

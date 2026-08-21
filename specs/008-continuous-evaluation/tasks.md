@@ -43,3 +43,19 @@
 ## Phase 6 — Document + ship
 - [ ] **T011** `docs/EVALUATION.md` — what's measured, thresholds, how to add a case, how the gates fire.
 - [ ] **T012** PR into `develop`; maintainer reviews against Success Criteria.
+
+## v2.0.0 — LLM output evaluation & selection (FR-012/013/014, this amendment)
+
+- [x] **T013** Golden regression cases: `ask_trend_kenya`, `ask_value_for_money`, `ask_roi` +
+      `checks.answer_contains_any` (expected key-facts) wired into the runner. (FR-012, SC-008)
+- [x] **T014** Helpfulness judge: `judge.judge_helpfulness` + `helpfulness_floor`, wired into
+      `_judge_results`; rubric made context-aware (SSA-only data + value-for-money framing are
+      correct, not penalised). (FR-013, SC-009)
+- [x] **T015** Configurable answer model: `insights.resolve_ask_model` + `ASK_MODEL` env + allowlist;
+      `/ask?model=` override. (FR-014)
+- [x] **T016** `evals/select_model.py` champion/challenger (quality floor → cost → latency) + price
+      table; writes `evals/llm_selection.json`. (FR-014, SC-010)
+- [x] **T017** `docs/adr/0009-llm-selection.md` + README. (FR-014)
+- [x] **T018** Tests: `answer_contains_any`, helpfulness dimension/unavailable, `select()` rule.
+- [x] **T019** Verify live: eval suite 6/6 with judges; selection run picks a champion (haiku, 0.96 ≥
+      floor, cheaper+faster than sonnet). Update `docs/PROJECT_BRIEF.md`.
