@@ -11,6 +11,7 @@ causation. No country is "failing"; it is above/below what its spending + contex
 
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 from typing import Any
@@ -25,12 +26,11 @@ from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.tree import DecisionTreeRegressor
 from xgboost import XGBRegressor
 
+from ml import artifacts
 from ml.features import FEATURES, TARGET, connect, feature_rows
 
 SEED = 42
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
-MODEL_PATH = MODELS_DIR / "life_expectancy.joblib"
-METADATA_PATH = MODELS_DIR / "life_expectancy_metadata.json"
 
 
 def load_frame() -> pd.DataFrame:
@@ -45,10 +45,11 @@ def load_frame() -> pd.DataFrame:
 
 def _champion_rmse() -> float | None:
     """The current champion's CV RMSE from saved metadata, or None on the first run."""
-    if not METADATA_PATH.exists():
+    raw = artifacts.get_bytes(artifacts.METADATA_FILENAME)
+    if raw is None:
         return None
     try:
-        meta = json.loads(METADATA_PATH.read_text())
+        meta = json.loads(raw)
         selected = meta.get("selected_model")
         for model in meta.get("models", []):
             if model.get("model") == selected:
@@ -144,7 +145,8 @@ def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
         ),
         "models": comparison.to_dict(orient="records"),
     }
-    METADATA_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+    body = (json.dumps(payload, indent=2) + "\n").encode()
+    artifacts.put_bytes(artifacts.METADATA_FILENAME, body)
 
 
 def main() -> None:
@@ -200,11 +202,12 @@ def main() -> None:
     final_model = candidate_models()[winner]
     final_model.fit(feature_frame, target)
 
-    MODELS_DIR.mkdir(exist_ok=True)
-    joblib.dump(final_model, MODEL_PATH)
+    buffer = io.BytesIO()
+    joblib.dump(final_model, buffer)
+    model_uri = artifacts.put_bytes(artifacts.MODEL_FILENAME, buffer.getvalue())
     save_metadata(table, winner)
-    print(f"saved -> {MODEL_PATH}")
-    print(f"metadata -> {METADATA_PATH}")
+    print(f"saved -> {model_uri}")
+    print(f"metadata -> {artifacts.artifact_base()}/{artifacts.METADATA_FILENAME}")
 
     all_predictions = final_model.predict(feature_frame)
     residual_count = persist_residuals(df, all_predictions, winner)

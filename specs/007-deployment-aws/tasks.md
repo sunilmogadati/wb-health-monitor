@@ -6,8 +6,9 @@
 > services) before building the compute module.
 
 ## Phase 0 — Prep the app for the cloud (code, not infra)
-- [ ] **T001** Make the model artifact path env-driven (`MODEL_URI`): `ml/train.py` writes and
-  `app/main.py` loads via a small storage shim — local file locally, `s3://…` in prod. Test both. (FR-006)
+- [x] **T001** Make the model artifact path env-driven (`MODEL_ARTIFACT_DIR`): `ml/artifacts.py`
+  storage shim (local path default, `s3://…` in prod); `ml/train.py` writes + `app/main.py` loads via
+  it. Local branch unit-tested; `make train` + `/predict` verified. (FR-006)
 - [ ] **T002** Confirm the `boto3` object-store client works against real S3 (no custom endpoint + IAM
   creds) as well as MinIO locally, driven by env. (FR-004)
 - [ ] **T003** Prod config knobs: `CORS_ALLOWED_ORIGINS`, `NEXT_PUBLIC_API_BASE`, DB + S3 from env;
