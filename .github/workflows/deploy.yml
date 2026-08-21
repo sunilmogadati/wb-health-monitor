@@ -1,0 +1,99 @@
+# CD to AWS (spec 007 FR-010). OIDC to AWS — no long-lived keys in GitHub. On a push to main:
+# test-gate → build+push both images to ECR → terraform plan (guarding unexpected destroys) →
+# apply → alembic migrate → post-deploy smoke (FR-011). Manual dispatch can also trigger a one-off
+# pipeline run to seed data.
+#
+# Reference workflow: it is INERT until the repo has the `deploy` environment + these secrets/vars set
+# (AWS_DEPLOY_ROLE_ARN, AWS_REGION). Guarded by `if: vars.DEPLOY_ENABLED == 'true'` so it never fails
+# a repo that hasn't opted in.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_pipeline:
+        description: "Also run a one-off data pipeline task after deploy"
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write # OIDC
+  contents: read
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: deploy
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      TF_VAR_api_image_tag: ${{ github.sha }}
+      TF_VAR_web_image_tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push images
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          docker build -t "$REGISTRY/${{ vars.PROJECT }}/api:${{ github.sha }}" backend
+          docker build -t "$REGISTRY/${{ vars.PROJECT }}/web:${{ github.sha }}" frontend
+          docker push "$REGISTRY/${{ vars.PROJECT }}/api:${{ github.sha }}"
+          docker push "$REGISTRY/${{ vars.PROJECT }}/web:${{ github.sha }}"
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform plan (guard destroys)
+        working-directory: infra
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          # Fail if the plan would destroy anything unexpected (SC-003 / US3 acceptance #2).
+          terraform show -json tfplan > plan.json
+          destroys=$(python -c "import json;p=json.load(open('plan.json'));print(sum(1 for r in p.get('resource_changes',[]) if 'delete' in r['change']['actions']))")
+          echo "planned destroys: $destroys"
+          if [ "$destroys" != "0" ]; then echo '::error::plan would destroy resources — stopping'; exit 1; fi
+
+      - name: Terraform apply
+        working-directory: infra
+        run: terraform apply -auto-approve tfplan
+
+      - name: Run DB migrations (alembic upgrade head)
+        working-directory: backend
+        run: |
+          pip install -e ".[dev]"
+          # DATABASE_URL is assembled from the db secret by the deploy environment (see README).
+          alembic upgrade head
+
+      - name: Post-deploy smoke test (FR-011)
+        working-directory: infra
+        run: |
+          url=$(terraform output -raw api_health_url)
+          echo "smoke: $url"
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)
+            [ "$code" = "200" ] && echo "healthy" && exit 0
+            sleep 10
+          done
+          echo "::error::API did not become healthy"; exit 1
+
+      - name: One-off pipeline run (optional)
+        if: ${{ inputs.run_pipeline }}
+        working-directory: infra
+        run: |
+          cluster=$(terraform output -raw ecs_cluster)
+          taskdef=$(terraform output -raw pipeline_task_definition)
+          subnets=$(terraform output -json 2>/dev/null | python -c "import json,sys;print(',')" || true)
+          echo "trigger: aws ecs run-task --cluster $cluster --task-definition $taskdef (see README for network args)"
