@@ -27,4 +27,36 @@ describe("TrendChart", () => {
     render(<TrendChart countryName="Kenya" indicatorLabel="Life expectancy" points={[]} />);
     expect(screen.getByRole("status")).toHaveTextContent(/no life expectancy data for kenya/i);
   });
+
+  it("appends the forecast continuation to the accessible summary when projected points are given", () => {
+    render(
+      <TrendChart
+        countryName="Kenya"
+        indicatorLabel="Life expectancy"
+        points={POINTS}
+        projected={[
+          { year: 2023, value: 60.5 },
+          { year: 2024, value: 60.9 },
+        ]}
+        projectionBasis="model"
+      />,
+    );
+    const summary = screen.getByText(/Kenya — Life expectancy/);
+    expect(summary.textContent).toContain("Forecast (model)");
+    expect(summary.textContent).toContain("2023: 60.5");
+  });
+
+  it("omits the forecast when the basis is none", () => {
+    render(
+      <TrendChart
+        countryName="Kenya"
+        indicatorLabel="Under-5 mortality"
+        points={POINTS}
+        projected={[]}
+        projectionBasis="none"
+      />,
+    );
+    const summary = screen.getByText(/Kenya — Under-5 mortality/);
+    expect(summary.textContent).not.toContain("Forecast");
+  });
 });

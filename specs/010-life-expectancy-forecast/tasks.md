@@ -31,3 +31,18 @@
 - [x] **T013** — `frontend`: `getForecast` type + `PredictionPanel` render the range next to the
       point (e.g. "60.9 yrs · indicative 55–66"). Update the forecast-mode test. *(FR-009, SC-005)*
 - [x] **T014** — Verify live + update `docs/PROJECT_BRIEF.md`.
+
+## v1.2.0 — trend-chart projection (FR-010, this amendment)
+
+- [x] **T015** — `tests/test_forecast.py`: `/forecast/series` contract (life_expectancy → `basis:"model"`
+      + future points; a feature → `basis:"trend"` = projected input; `under5_mortality` → `basis:"none"`
+      + no points; unknown country → 404). *(FR-010, SC-006)*
+- [x] **T016** — `backend/app/main.py`: `ForecastSeriesResponse` + `GET /forecast/series` (reuses
+      `country_history` + `forecast_features` + the model; declines non-projectable indicators). *(FR-010)*
+- [x] **T017** — `frontend/src/lib/api.ts`: `ForecastSeriesResponse` type + `getForecastSeries`.
+- [x] **T018** — `frontend/src/components/TrendChart.tsx`: optional `projected` points → dashed,
+      distinct-colour forecast line joined at the last observed year. *(FR-010, SC-006)*
+- [x] **T019** — `frontend/src/app/page.tsx`: fetch the projected series for projectable indicators,
+      pass to `TrendChart`, show a basis note; update the trend hint. *(FR-010)*
+- [x] **T020** — `TrendChart.test.tsx`: renders the dashed forecast line when projected points given.
+- [x] **T021** — Verify live + update `docs/PROJECT_BRIEF.md`.

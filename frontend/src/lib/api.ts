@@ -154,3 +154,35 @@ export function getForecast(country: string, year: number): Promise<ForecastResp
   const params = new URLSearchParams({ country, year: String(year) });
   return getJson<ForecastResponse>(`/forecast?${params.toString()}`);
 }
+
+// --- Forecast series (spec 010 /forecast/series): future points to extend the trend chart ---
+// `basis` discloses HOW the future was projected: "model" (life expectancy, the model's output),
+// "trend" (a model input, extrapolated — NOT a model prediction), or "none" (not projectable).
+
+export type ForecastBasis = "model" | "trend" | "none";
+
+export interface ForecastSeriesResponse {
+  country_code: string;
+  country_name: string;
+  indicator: string;
+  basis: ForecastBasis;
+  points: { year: number; value: number }[];
+  caveat: string;
+}
+
+// The only indicators with a projection path: the model's target + its four inputs.
+export const PROJECTABLE_INDICATORS = new Set([
+  "life_expectancy",
+  "health_spend_pct_gdp",
+  "gdp_per_capita",
+  "internet_pct",
+  "fertility_rate",
+]);
+
+export function getForecastSeries(
+  country: string,
+  indicator: string,
+): Promise<ForecastSeriesResponse> {
+  const params = new URLSearchParams({ country, indicator });
+  return getJson<ForecastSeriesResponse>(`/forecast/series?${params.toString()}`);
+}

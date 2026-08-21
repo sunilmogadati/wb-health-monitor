@@ -63,6 +63,36 @@ class ForecastResponse(BaseModel):
     model: str
 
 
+# The three honest projection bases for a trend-chart continuation (FR-010).
+_SERIES_CAVEATS = {
+    "model": (
+        "Forecast: life expectancy from the model on projected inputs — a scenario, not a "
+        "measurement. Uncertainty grows with the horizon."
+    ),
+    "trend": (
+        "Projected by extrapolating this indicator's own recent trend. This indicator is a model "
+        "*input*, so this is a trend projection, not a model prediction — a scenario, not a "
+        "measurement."
+    ),
+    "none": "No forecast: this indicator is neither the model's target nor one of its inputs.",
+}
+MAX_FORECAST_YEAR = 2028
+
+
+class ForecastPoint(BaseModel):
+    year: int
+    value: float
+
+
+class ForecastSeriesResponse(BaseModel):
+    country_code: str
+    country_name: str
+    indicator: str
+    basis: str  # "model" | "trend" | "none"
+    points: list[ForecastPoint]
+    caveat: str
+
+
 @router.get("/health", summary="Process status and the server's own clock")
 def health() -> dict[str, Any]:
     """Liveness with the server clock. No dependency calls."""
@@ -256,6 +286,61 @@ def forecast(country: str, year: int) -> ForecastResponse:
         based_on_years=based_on_years,
         caveat=FORECAST_CAVEAT,
         model=_model_name(),
+    )
+
+
+@router.get("/forecast/series", response_model=ForecastSeriesResponse)
+def forecast_series(
+    country: str, indicator: str, to_year: int = MAX_FORECAST_YEAR
+) -> ForecastSeriesResponse:
+    """Projected FUTURE points for one indicator, continuing the trend chart past the data (FR-010).
+
+    Only three projection bases exist, and each is disclosed honestly (Principle V):
+    - ``life_expectancy`` (the model's target) → ``basis="model"``: project the inputs, predict.
+    - a model **input** indicator → ``basis="trend"``: the projected input value itself (NOT a model
+      output).
+    - anything else (e.g. ``under5_mortality``) → ``basis="none"``: no points; never fabricated.
+
+    Returns future points only; the observed series comes from ``/timeseries``.
+    """
+    with connect() as conn:
+        latest = max_year(conn)
+        history = country_history(conn, country)
+
+    if not history:
+        raise HTTPException(status_code=404, detail=f"No published history found for {country}.")
+
+    first = history[0]
+    base = ForecastSeriesResponse(
+        country_code=str(first["country_code"]),
+        country_name=str(first["country_name"]),
+        indicator=indicator,
+        basis="none",
+        points=[],
+        caveat=_SERIES_CAVEATS["none"],
+    )
+    if indicator != TARGET and indicator not in FEATURES:
+        return base  # not projectable — honest empty result, not an error
+
+    start = (latest if latest is not None else int(history[-1]["year"])) + 1
+    end = min(to_year, MAX_FORECAST_YEAR)
+    is_target = indicator == TARGET
+    model = _load_model() if is_target else None
+
+    points: list[ForecastPoint] = []
+    for year in range(start, end + 1):
+        projected = forecast_features(history, year)
+        if projected is None:
+            break  # not enough history to project — stop rather than fake later years
+        if is_target and model is not None:
+            value = float(model.predict(_feature_frame(dict(projected)))[0])
+        else:
+            value = projected[indicator]
+        points.append(ForecastPoint(year=year, value=round(value, 2)))
+
+    basis = "model" if is_target else "trend"
+    return base.model_copy(
+        update={"basis": basis, "points": points, "caveat": _SERIES_CAVEATS[basis]}
     )
 
 

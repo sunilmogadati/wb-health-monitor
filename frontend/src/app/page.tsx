@@ -6,10 +6,13 @@ import {
   type BenchmarkResponse,
   type CompareRow,
   type CountrySummary,
+  type ForecastSeriesResponse,
   type TimeSeriesPoint,
+  PROJECTABLE_INDICATORS,
   getBenchmark,
   getCompare,
   getCountries,
+  getForecastSeries,
   getTimeSeries,
 } from "@/lib/api";
 import { AskPanel } from "@/components/AskPanel";
@@ -66,6 +69,7 @@ export default function DashboardPage() {
   const [trendCountry, setTrendCountry] = useState<string>("");
   const [trendIndicator, setTrendIndicator] = useState<string>(DEFAULT_INDICATOR);
   const [trendPoints, setTrendPoints] = useState<TimeSeriesPoint[] | null>(null);
+  const [trendForecast, setTrendForecast] = useState<ForecastSeriesResponse | null>(null);
   const [trendError, setTrendError] = useState<string | null>(null);
 
   const [compareIndicator, setCompareIndicator] = useState<string>(DEFAULT_INDICATOR);
@@ -111,6 +115,16 @@ export default function DashboardPage() {
       });
   }, [trendCountry, trendIndicator]);
 
+  // The forecast continuation for the trend chart — only for indicators with a projection path
+  // (the model's target + its inputs). A failure here is non-fatal: the observed line still renders.
+  // We never reset synchronously; render filters by matching indicator so a stale series can't show.
+  useEffect(() => {
+    if (!trendCountry || !PROJECTABLE_INDICATORS.has(trendIndicator)) return;
+    getForecastSeries(trendCountry, trendIndicator)
+      .then((series) => setTrendForecast(series))
+      .catch(() => setTrendForecast(null));
+  }, [trendCountry, trendIndicator]);
+
   useEffect(() => {
     if (compareCountries.length === 0) return;
     getCompare(compareCountries, compareIndicator)
@@ -131,6 +145,15 @@ export default function DashboardPage() {
 
   const trendCountryName =
     countries?.find((c) => c.country_code === trendCountry)?.country_name ?? trendCountry;
+
+  // Only use the fetched forecast if it matches the currently-selected indicator (guards against a
+  // stale series flashing after the indicator is switched, before the new fetch resolves).
+  const activeForecast =
+    trendForecast &&
+    trendForecast.indicator === trendIndicator &&
+    PROJECTABLE_INDICATORS.has(trendIndicator)
+      ? trendForecast
+      : null;
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-6">
@@ -190,7 +213,7 @@ export default function DashboardPage() {
 
       <SectionCard
         title="Indicator trend"
-        hint="One country's indicator over the years. A gap in the line is a value the data-quality gate removed as an anomaly."
+        hint="One country's indicator over the years. The solid line is observed data; a dashed amber line continues it into the future (2023–2028) — for life expectancy that's the model's forecast, for a model input it's a trend projection. A gap in the solid line is a value the data-quality gate removed."
       >
         <div className="mb-3 flex flex-wrap gap-4 text-sm text-slate-700">
           <label>
@@ -228,7 +251,20 @@ export default function DashboardPage() {
             countryName={trendCountryName}
             indicatorLabel={indicatorLabel(trendIndicator)}
             points={trendPoints}
+            projected={activeForecast?.points}
+            projectionBasis={activeForecast?.basis}
           />
+        )}
+        {!trendError && trendPoints && activeForecast && activeForecast.basis !== "none" && (
+          <p className="mt-2 text-xs text-amber-800">
+            <span className="font-medium">Dashed = forecast.</span> {activeForecast.caveat}
+          </p>
+        )}
+        {!trendError && trendPoints && !PROJECTABLE_INDICATORS.has(trendIndicator) && (
+          <p className="mt-2 text-xs text-slate-500">
+            No forecast for this indicator — it is neither the model&apos;s target nor one of its
+            inputs, so the model can&apos;t project it.
+          </p>
         )}
         {!trendError && !trendPoints && <p className="text-sm text-slate-500">Loading…</p>}
       </SectionCard>

@@ -59,3 +59,20 @@ horizon"`.
 - `indicative_interval` stays **pure** in `ml/forecast.py` (unit-tested: low ≤ point ≤ high, widens
   with horizon, clamped ≥ 0). The endpoint reads `cv_rmse` from metadata and passes it in.
 - Frontend renders the range beside the point; no new endpoint, no model retrain.
+
+## v1.2.0 amendment — trend-chart projection (FR-010)
+
+**Basis discipline (the honest part):** only three projection paths exist, and each is disclosed:
+- `life_expectancy` (the target) → **model**: per future year, `forecast_features(history, year)` →
+  `model.predict(...)`. Same math as `/forecast`, one point per year.
+- the four **input** indicators → **trend**: the value is simply `forecast_features(...)[indicator]`
+  — the projected *input*, surfaced directly. Disclosed as an input projection, not a model output.
+- everything else (`under5_mortality`) → **none**: no path; return no points + a note. Never fabricate.
+
+**Endpoint:** `GET /forecast/series?country=&indicator=&to_year=` returns future points only (the
+observed series already comes from `/timeseries`); the frontend stitches them, drawing the forecast
+segment dashed + amber, joined at the last observed year so the line is continuous. Reuses
+`country_history` + `forecast_features` + the loaded model — no new model, no retrain.
+
+**Tests:** endpoint contract per basis (model / trend / none / 404); TrendChart renders a dashed line
+when projected points are supplied.

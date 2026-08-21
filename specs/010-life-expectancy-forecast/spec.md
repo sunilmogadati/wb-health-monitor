@@ -6,9 +6,14 @@
 
 **Status**: Accepted & implemented (2026-08-20) — merged in PR #26.
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 
 **Amendment history**:
+- **1.2.0 (2026-08-20)** — spec-miss/scope amendment: the **Indicator trend** chart stopped at the
+  last data year while the prediction panel forecast the future — inconsistent. Added **FR-010**: the
+  trend chart continues into future years with a **visually-distinct forecast segment**, disclosing
+  its basis (model for life expectancy; trend extrapolation for the model's input indicators; nothing
+  for indicators the system can't project). New endpoint `/forecast/series`.
 - **1.1.0 (2026-08-20)** — spec-miss/scope amendment: promoted the deferred confidence-interval item
   (was FR-008 "out of scope") to an **in-scope requirement, FR-009** — an *indicative* range around
   the forecast. Reason: the point-forecast reads as more precise than it is; a range makes the
@@ -97,6 +102,21 @@ what we don't."
 
   *(Superseded FR-008, "no interval — qualitative caveat only", from v1.0.0.)*
 
+- **FR-010 (added in v1.2.0)**: The **Indicator trend** chart MUST continue past the last data year
+  (through 2028) with a **visually-distinct forecast segment** (dashed + different colour), for
+  indicators that have a projection path:
+  - **life_expectancy** → the segment is the **model** forecast (project inputs → predict), via a new
+    `GET /forecast/series?country=&indicator=&to_year=` endpoint (`basis: "model"`).
+  - the four **model-input indicators** (`health_spend_pct_gdp`, `gdp_per_capita`, `internet_pct`,
+    `fertility_rate`) → the segment is that indicator's own **trend extrapolation** (`basis: "trend"`).
+    It MUST be disclosed as a *projected input*, NOT a model output — a dashed GDP line must not imply
+    the model predicts GDP (Principle V).
+  - indicators the system can't project (e.g. `under5_mortality`, neither target nor input) → **no
+    forecast segment** (`basis: "none"`); the chart shows observed data only, with a short note.
+
+  The observed segment stays solid and stops at the last data year; the forecast segment is labelled,
+  and its basis (model vs trend) is stated. Deterministic (Principle VI).
+
 ### Key Entities
 
 - **ForecastResponse**: `country_code, country_name, year, projected_indicators{feature→value},
@@ -113,3 +133,8 @@ what we don't."
 - **SC-005 (v1.1.0)**: Every forecast response carries `forecast_low` ≤ `forecast_life_expectancy` ≤
   `forecast_high`, the band **widens** as the target year moves further past the last data year, and
   it is labelled *indicative* (not a 95% CI). The dashboard renders the range next to the point.
+- **SC-006 (v1.2.0)**: The trend chart for `life_expectancy` and each of the four input indicators
+  shows a dashed forecast continuation through 2028, distinct from the solid observed line and
+  labelled with its basis; `under5_mortality` shows observed only with a "no forecast" note.
+  `/forecast/series?country=KEN&indicator=life_expectancy` returns `basis:"model"` with future points;
+  for a feature, `basis:"trend"`; for `under5_mortality`, `basis:"none"` and no points.
