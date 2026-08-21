@@ -28,14 +28,16 @@ resource "aws_cloudfront_origin_access_control" "web" {
 locals {
   s3_origin_id  = "web-s3"
   alb_origin_id = "api-alb"
-  app_url       = "https://${aws_cloudfront_distribution.web.domain_name}"
+  # The app URL is the custom domain when set, else the CloudFront hostname.
+  app_url = local.enable_app_domain ? "https://${var.domain_name}" : "https://${aws_cloudfront_distribution.web.domain_name}"
 }
 
 resource "aws_cloudfront_distribution" "web" {
   enabled             = true
   default_root_object = "index.html"
   comment             = "${var.project} dashboard + /api proxy"
-  # Custom-domain aliases are the stretch; the default *.cloudfront.net hostname needs none.
+  web_acl_id          = aws_wafv2_web_acl.cloudfront.arn
+  aliases             = local.enable_app_domain ? [var.domain_name] : []
 
   # Origin 1: the SPA in S3 (private, via OAC).
   origin {
@@ -93,9 +95,10 @@ resource "aws_cloudfront_distribution" "web" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = var.acm_certificate_arn == ""
-    acm_certificate_arn            = var.acm_certificate_arn == "" ? null : var.acm_certificate_arn
-    ssl_support_method             = var.acm_certificate_arn == "" ? null : "sni-only"
+    cloudfront_default_certificate = !local.enable_app_domain
+    acm_certificate_arn            = local.enable_app_domain ? local.app_certificate_arn : null
+    ssl_support_method             = local.enable_app_domain ? "sni-only" : null
+    minimum_protocol_version       = local.enable_app_domain ? "TLSv1.2_2021" : null
   }
 }
 

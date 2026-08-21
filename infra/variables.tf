@@ -57,12 +57,25 @@ variable "api_memory" {
   default = 512
 }
 
-# Optional: a custom domain for the CloudFront distribution (with an ACM cert in us-east-1). Empty
-# (the demo default) serves the dashboard on the CloudFront `*.cloudfront.net` hostname — no domain
-# needed. Custom domain + cert is the documented stretch.
-variable "acm_certificate_arn" {
+# --- Custom domains (FR-015). All optional — unset ⇒ the default CloudFront/ALB hostnames. ---
+#
+# route53_zone_name is the EXISTING hosted zone Terraform looks up (e.g. "example.com"); the domain
+# must already be registered + delegated to Route53 (a manual step — see docs/DEPLOYMENT.md). When a
+# zone name is set, `domain_name` gives the app its URL (CloudFront) and `api_domain_name` optionally
+# gives the API its own subdomain (ALB HTTPS).
+variable "route53_zone_name" {
   type    = string
   default = ""
+}
+
+variable "domain_name" {
+  type    = string
+  default = "" # e.g. "app.example.com" — the dashboard URL
+}
+
+variable "api_domain_name" {
+  type    = string
+  default = "" # e.g. "api.example.com" — a dedicated API subdomain (optional; same-origin works too)
 }
 
 # Cron for the batch pipeline (ingest → dbt-build → train). Default: daily 06:00 UTC (FR-005).

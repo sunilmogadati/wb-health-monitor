@@ -35,3 +35,17 @@ provider "aws" {
     }
   }
 }
+
+# CloudFront's ACM cert and a CLOUDFRONT-scoped WAF must live in us-east-1, regardless of var.region.
+provider "aws" {
+  alias  = "us_east_1"
+  region = "us-east-1"
+
+  default_tags {
+    tags = {
+      Project   = var.project
+      Spec      = "007-deployment-aws"
+      ManagedBy = "terraform"
+    }
+  }
+}

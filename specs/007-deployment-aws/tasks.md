@@ -49,3 +49,11 @@
 ## Phase 6 — Ship
 - [ ] **T019** PR into `develop`; maintainer reviews against Success Criteria; then a controlled first
   deploy from `main`.
+
+## v1.2.0 — production hardening (FR-013..016)
+- [x] **T020** WAFv2 web ACL on CloudFront (managed rules + rate limit), us-east-1 provider. (FR-013)
+- [x] **T021** VPC endpoints: S3 gateway + ECR/Secrets/Logs interface (skip NAT for AWS svcs). (FR-014)
+- [x] **T022** Route53 + ACM for the app domain (CloudFront, us-east-1) + optional API subdomain (ALB
+      HTTPS, regional); all gated on optional vars. (FR-015)
+- [x] **T023** `docs/DEPLOYMENT.md` — manual AWS steps vs Terraform automation + teardown + cost. (FR-016)
+- [x] **T024** `terraform fmt` + `validate` clean on both roots (validated, not applied).

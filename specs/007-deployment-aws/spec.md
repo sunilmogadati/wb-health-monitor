@@ -6,9 +6,18 @@
 
 **Status**: Accepted (2026-08-20) · amended to **v1.1.0** (2026-08-21).
 
-**Version**: 1.1.0
+**Version**: 1.2.0
 
 **Amendment history**:
+- **1.2.0 (2026-08-21)** — production hardening. **FR-013 WAF**: a WAFv2 web ACL (AWS managed rule
+  groups + a rate-based rule) on CloudFront. **FR-014 VPC endpoints**: an S3 **gateway** endpoint +
+  **interface** endpoints for ECR/Secrets Manager/CloudWatch Logs, so private subnets reach AWS
+  services without the NAT (cheaper, more private). **FR-015 custom domains** (no API Gateway): the
+  **app** gets a domain via CloudFront + ACM (us-east-1) + Route53; the **API** optionally gets its own
+  subdomain via an **ALB HTTPS listener** + a regional ACM cert + Route53 — all gated on optional vars
+  (unset ⇒ the CloudFront/ALB default hostnames, still deployable). **FR-016**: `docs/DEPLOYMENT.md`
+  documents the **manual AWS steps** (domain/registrar, ACM validation, state bootstrap, OIDC, secrets)
+  vs. what Terraform automates.
 - **1.1.0 (2026-08-21)** — architecture amendment: the **dashboard moves off ECS to S3 + CloudFront**
   (it is a pure client-side SPA → a Next.js **static export**), so there is no web container, no web
   Fargate service, and no missing web Dockerfile. **FR-002** now hosts only the API on ECS/ALB; the
@@ -123,6 +132,26 @@ API, and how CI/CD ships changes.
   one read endpoint and fails the pipeline if they don't answer (Principle II at the deploy layer).
 - **FR-012** — **Cost + teardown**: default to the smallest workable sizes (single-AZ acceptable for the
   demo); document `terraform destroy` and confirm it removes all billable resources.
+
+### v1.2.0 — production hardening
+
+- **FR-013** — **WAF**: a **WAFv2 web ACL** attached to CloudFront (scope `CLOUDFRONT`, so created in
+  us-east-1) with AWS **managed rule groups** (Common + Known-Bad-Inputs + SQLi) and a **rate-based**
+  rule; requests are sampled to CloudWatch. Blocks the obvious edge attacks before they reach the ALB.
+- **FR-014** — **VPC endpoints**: an **S3 gateway** endpoint (free) on the private route table, and
+  **interface** endpoints for `ecr.api`, `ecr.dkr`, `secretsmanager`, and `logs`, so the tasks pull
+  images, read secrets, and ship logs **without egressing through the NAT** — lower cost, traffic stays
+  on the AWS backbone.
+- **FR-015** — **Custom domains (no API Gateway)**: gated on optional vars. **`domain_name`** set ⇒ the
+  app is served at that domain (CloudFront alias + an ACM cert in **us-east-1**, DNS-validated in
+  Route53). **`api_domain_name`** set ⇒ the API also gets a dedicated subdomain via an **ALB HTTPS:443
+  listener** with a **regional** ACM cert + a Route53 alias to the ALB. Both unset ⇒ the default
+  CloudFront/ALB hostnames (still deployable). API Gateway is explicitly **not** used — ALB + ACM +
+  Route53 provide the API's domain + TLS.
+- **FR-016** — **Deployment doc**: `docs/DEPLOYMENT.md` — the ordered runbook separating the **manual
+  AWS steps** (register/delegate the domain, approve ACM validation, bootstrap the Terraform state
+  bucket, create the GitHub OIDC role + repo secrets, set the Anthropic secret value) from what
+  **Terraform automates**, plus teardown.
 
 ### Key Entities *(infra, not data)*
 
