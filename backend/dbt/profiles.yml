@@ -5,7 +5,7 @@ wb_health_monitor:
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('DBT_PGHOST', 'localhost') }}"
+      host: "{{ env_var('DBT_PGHOST', env_var('POSTGRES_HOST', 'localhost')) }}"
       port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
       user: "{{ env_var('POSTGRES_USER', 'wbhealth') }}"
       password: "{{ env_var('POSTGRES_PASSWORD', 'wbhealth_local_dev') }}"

@@ -23,7 +23,7 @@ RUN apt-get update \
 # does not invalidate the dependency layer on every rebuild.
 COPY pyproject.toml ./
 RUN pip install --upgrade pip setuptools wheel \
- && pip install -e ".[dev,ml,ai]"
+ && pip install -e ".[dev,ml,ai,warehouse]"
 
 COPY . .
 

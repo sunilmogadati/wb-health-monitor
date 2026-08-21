@@ -36,19 +36,22 @@ def _running_in_container() -> bool:
 
 
 def _pg_host() -> str:
+    # Honor an explicit host FIRST (PGHOST, then POSTGRES_HOST) so this works on any runtime: host,
+    # Docker, ECS/Fargate). The `/.dockerenv` check is only a last-resort default: Fargate has no
+    # `/.dockerenv`, so relying on it there wrongly fell back to localhost (spec 007 deploy fix).
     if os.getenv("PGHOST"):
         return os.environ["PGHOST"]
-    if _running_in_container():
-        return os.getenv("POSTGRES_HOST", "db")
-    return "localhost"
+    if os.getenv("POSTGRES_HOST"):
+        return os.environ["POSTGRES_HOST"]
+    return "db" if _running_in_container() else "localhost"
 
 
 def _pg_port() -> str:
     if os.getenv("PGPORT"):
         return os.environ["PGPORT"]
-    if _running_in_container():
-        return "5432"
-    return os.getenv("POSTGRES_PORT", "5432")
+    if os.getenv("POSTGRES_PORT"):
+        return os.environ["POSTGRES_PORT"]
+    return "5432"
 
 
 def connect() -> psycopg.Connection:
