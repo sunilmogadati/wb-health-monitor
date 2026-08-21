@@ -15,16 +15,30 @@ YEAR_FROM, YEAR_TO = 2015, 2022
 RAW_BUCKET = os.environ.get("S3_BUCKET_RAW", "raw")
 
 
+def s3_client_kwargs() -> dict[str, str]:
+    """boto3 client kwargs, driven by env so the SAME code hits MinIO locally and real S3 in prod.
+
+    Only pass what's set: with ``S3_ENDPOINT_URL`` unset (prod) boto3 uses AWS's default endpoint;
+    with the access keys unset (prod) boto3 falls back to the IAM task-role credential chain. Local
+    dev provides all three via ``.env`` (MinIO). No cloud/local branch in the code — just config.
+    """
+    kwargs: dict[str, str] = {}
+    endpoint = os.environ.get("S3_ENDPOINT_URL")
+    if endpoint:
+        kwargs["endpoint_url"] = endpoint
+    access_key = os.environ.get("S3_ACCESS_KEY")
+    secret_key = os.environ.get("S3_SECRET_KEY")
+    if access_key and secret_key:
+        kwargs["aws_access_key_id"] = access_key
+        kwargs["aws_secret_access_key"] = secret_key
+    return kwargs
+
+
 def _land_raw(csv_path: Path, pull_id: int) -> str:
-    """Upload the raw pull to the MinIO `raw` zone (immutable bronze); return its s3:// key."""
+    """Upload the raw pull to the `raw` zone (immutable bronze); return its s3:// key."""
     import boto3
 
-    s3 = boto3.client(
-        "s3",
-        endpoint_url=os.environ.get("S3_ENDPOINT_URL", "http://minio:9000"),
-        aws_access_key_id=os.environ.get("S3_ACCESS_KEY", "wbhealth"),
-        aws_secret_access_key=os.environ.get("S3_SECRET_KEY", "wbhealth_local_dev"),
-    )
+    s3 = boto3.client("s3", **s3_client_kwargs())
     try:
         s3.head_bucket(Bucket=RAW_BUCKET)
     except Exception:

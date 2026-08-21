@@ -15,14 +15,10 @@ variable "vpc_cidr" {
   default = "10.20.0.0/16"
 }
 
-# Container image tags to deploy — CI passes the git SHA; defaults let a first apply stand up the
-# infra before images exist (services will sit unhealthy until the first push, which is fine).
+# API image tag to deploy — CI passes the git SHA; the default lets a first apply stand up the infra
+# before the image exists (the API service sits unhealthy until the first push, which is fine). The
+# dashboard is a static export (no image) — it is `aws s3 sync`ed by CI, not tagged here.
 variable "api_image_tag" {
-  type    = string
-  default = "bootstrap"
-}
-
-variable "web_image_tag" {
   type    = string
   default = "bootstrap"
 }
@@ -61,19 +57,9 @@ variable "api_memory" {
   default = 512
 }
 
-variable "web_cpu" {
-  type    = number
-  default = 256
-}
-
-variable "web_memory" {
-  type    = number
-  default = 512
-}
-
-# Optional ACM certificate ARN. When set, the ALB serves HTTPS:443 and redirects 80→443 (FR-001/SC-001).
-# When empty (the demo default), the ALB serves plain HTTP:80 on its AWS hostname — deployable with no
-# domain. Custom domain + cert is the documented stretch.
+# Optional: a custom domain for the CloudFront distribution (with an ACM cert in us-east-1). Empty
+# (the demo default) serves the dashboard on the CloudFront `*.cloudfront.net` hostname — no domain
+# needed. Custom domain + cert is the documented stretch.
 variable "acm_certificate_arn" {
   type    = string
   default = ""

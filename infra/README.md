@@ -13,13 +13,17 @@ pipeline, **Secrets Manager**, and a **GitHub OIDC** deploy role. CI/CD is `.git
 
 | Local (`docker compose`) | AWS |
 |---|---|
-| `api` container | ECS Fargate service `api` (ALB `/api/*`) |
-| `web` (Next.js) | ECS Fargate service `web` (ALB `/*`) |
+| `api` container | ECS Fargate service `api` (ALB) |
+| `web` (Next.js dev) | **static export → S3 + CloudFront** (CloudFront `/api/*` → ALB, same-origin) |
 | Postgres | RDS Postgres |
-| MinIO `raw` zone | S3 raw bucket (`S3_RAW_BUCKET`) |
+| MinIO `raw` zone | S3 raw bucket (`S3_BUCKET_RAW`; `S3_ENDPOINT_URL` unset in prod → AWS default) |
 | local `models/` | S3 artifacts bucket (`MODEL_ARTIFACT_DIR=s3://…/models`, FR-006) |
 | `make ingest dbt-build train` | scheduled Fargate task → `python -m scripts.run_pipeline` |
 | `.env` secrets | Secrets Manager (DB creds + `ANTHROPIC_API_KEY`) |
+
+The dashboard is a **client-side SPA** (`next build` with `output: 'export'` → `frontend/out/`), so it
+needs no container: CI `aws s3 sync`s it to the web bucket and CloudFront serves it, forwarding
+`/api/*` to the ALB so the browser calls the API **same-origin** (`/api/v1`) — no CORS, no baked URL.
 
 ## First-time deploy
 
