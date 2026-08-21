@@ -20,6 +20,7 @@ import joblib
 import pandas as pd
 from evals import checks
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.feature_selection import mutual_info_regression
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold, cross_val_score, train_test_split
@@ -133,7 +134,33 @@ def persist_residuals(
     return len(records)
 
 
-def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
+def feature_analysis(
+    feature_frame: pd.DataFrame, target: pd.Series, importances: Any
+) -> dict[str, dict[str, float | None]]:
+    """Feature-importance evidence (FR-011) — makes feature choice measured, not just expert-judged.
+
+    Two signals per feature: mutual information (mutual_info_regression = the regression form of
+    information gain; captures non-linear dependence correlation misses) and the winning model's
+    importances (RandomForest feature_importances_). It does NOT auto-select features (the set stays
+    domain-chosen for interpretability) — it validates that choice with data. Deterministic (seeded
+    MI). importances may be None if the winning model exposes none.
+    """
+    mi = mutual_info_regression(feature_frame, target, random_state=SEED)
+    imp = list(importances) if importances is not None else [None] * len(FEATURES)
+    return {
+        feature: {
+            "mutual_info": round(float(mi[i]), 4),
+            "model_importance": (round(float(imp[i]), 4) if imp[i] is not None else None),
+        }
+        for i, feature in enumerate(FEATURES)
+    }
+
+
+def save_metadata(
+    comparison: pd.DataFrame,
+    winner: str,
+    analysis: dict[str, dict[str, float | None]] | None = None,
+) -> None:
     payload = {
         "target": TARGET,
         "features": FEATURES,
@@ -144,6 +171,7 @@ def save_metadata(comparison: pd.DataFrame, winner: str) -> None:
             "value-for-money benchmark, not a causal claim"
         ),
         "models": comparison.to_dict(orient="records"),
+        "feature_analysis": analysis or {},
     }
     body = (json.dumps(payload, indent=2) + "\n").encode()
     artifacts.put_bytes(artifacts.METADATA_FILENAME, body)
@@ -202,10 +230,19 @@ def main() -> None:
     final_model = candidate_models()[winner]
     final_model.fit(feature_frame, target)
 
+    # Feature-importance evidence (FR-011): mutual information + the winner's importances.
+    importances = getattr(final_model, "feature_importances_", None)
+    analysis = feature_analysis(feature_frame, target, importances)
+    print("\nfeature importance (mutual info = information gain | model importance):")
+    for feature, scores in sorted(analysis.items(), key=lambda kv: -(kv[1]["mutual_info"] or 0.0)):
+        model_imp = scores["model_importance"]
+        model_str = f"{model_imp:.4f}" if model_imp is not None else "n/a"
+        print(f"  {feature:24} MI={scores['mutual_info']:.4f}  model={model_str}")
+
     buffer = io.BytesIO()
     joblib.dump(final_model, buffer)
     model_uri = artifacts.put_bytes(artifacts.MODEL_FILENAME, buffer.getvalue())
-    save_metadata(table, winner)
+    save_metadata(table, winner, analysis)
     print(f"saved -> {model_uri}")
     print(f"metadata -> {artifacts.artifact_base()}/{artifacts.METADATA_FILENAME}")
 

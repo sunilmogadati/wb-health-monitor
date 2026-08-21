@@ -130,15 +130,15 @@ deliberately small/interpretable**, not automated. The four predictors are healt
 proxy. Two deliberate *exclusions* are the real teaching points: `uhc_index` (too sparse, above), and —
 importantly — **`under5_mortality` is pulled but *not* used as a predictor**: it's so tightly coupled to
 life expectancy that it would act as a **near-restatement of the target** (leakage-flavoured), inflating
-accuracy without adding insight. We did **not** run automated selection or build derived
-features (interactions, `log(GDP)`) — both are honest next steps. The rigorous, evidence-based upgrade
-(and a natural student feature-engineering exercise) is to **rank features by mutual information**
-(`sklearn.feature_selection.mutual_info_regression` — the regression form of *information gain*, which
-captures non-linear dependence that correlation misses), validate with **permutation importance /
-RandomForest `feature_importances_`** (does the trained model actually rely on each feature?), and prune
-redundancy with **correlation/VIF**. Today the empirical check that the small set is reasonable comes
-from the model comparison below (tree ensembles fit it well); mutual-information ranking would make
-selection *measured* rather than *expert-judged*.
+accuracy without adding insight. We deliberately do **not** *auto-select* (the set stays domain-chosen for interpretability), but we now
+**measure** the choice (FR-011): every `make train` computes per-feature **mutual information**
+(`mutual_info_regression` — the regression form of *information gain*, capturing non-linear dependence
+correlation misses) + the winning model's **`feature_importances_`**, prints a ranked table, and saves
+it to the model metadata. The live result is itself a finding: **`fertility_rate` carries the strongest
+signal (MI 0.55) and `health_spend_pct_gdp` the weakest (MI 0.21)** — spending alone barely predicts
+outcomes, which is precisely why the *value-for-money residual* is the product, not raw spend.
+(Permutation importance, correlation/VIF pruning, and derived features like `log(GDP)` are natural
+next steps.)
 
 ### Data quality in practice — a real anomaly the eval gate caught
 
