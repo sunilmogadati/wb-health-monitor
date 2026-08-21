@@ -10,11 +10,11 @@ from __future__ import annotations
 import os
 import time
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from ml import artifacts
 from ml.brief import CountryHealthBrief, build_brief
 from ml.features import FEATURES, TARGET, connect, country_history, country_year_row, max_year
 from ml.forecast import INTERVAL_METHOD, forecast_features, indicative_interval
@@ -24,9 +24,6 @@ from app.analytics import router as analytics_router
 from app.ask import router as ask_router
 
 API_V1_PREFIX = "/api/v1"
-MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
-MODEL_PATH = MODELS_DIR / "life_expectancy.joblib"
-METADATA_PATH = MODELS_DIR / "life_expectancy_metadata.json"
 
 router = APIRouter(tags=["health"])
 
@@ -117,31 +114,43 @@ def readiness() -> dict[str, Any]:
 
 @lru_cache
 def _load_model() -> Any:
-    if not MODEL_PATH.exists():
+    data = artifacts.get_bytes(artifacts.MODEL_FILENAME)
+    if data is None:
         raise HTTPException(
             status_code=503,
             detail="Model artifact not found. Run `make train` before using predictions.",
         )
     try:
+        import io
+
         import joblib
     except ImportError as exc:
         raise HTTPException(
             status_code=503,
             detail="Prediction dependencies are not installed. Install `backend[ml]`.",
         ) from exc
-    return joblib.load(MODEL_PATH)
+    return joblib.load(io.BytesIO(data))
 
 
-def _model_name() -> str:
-    if not METADATA_PATH.exists():
-        return MODEL_PATH.name
+def _metadata() -> dict[str, Any] | None:
+    """The model metadata (selected model + per-model metrics), or None if not written yet."""
+    raw = artifacts.get_bytes(artifacts.METADATA_FILENAME)
+    if raw is None:
+        return None
     try:
         import json
 
-        metadata = json.loads(METADATA_PATH.read_text())
-        return str(metadata.get("selected_model", MODEL_PATH.name))
-    except (OSError, ValueError, TypeError):
-        return MODEL_PATH.name
+        loaded: dict[str, Any] = json.loads(raw)
+        return loaded
+    except (ValueError, TypeError):
+        return None
+
+
+def _model_name() -> str:
+    metadata = _metadata()
+    if metadata is None:
+        return artifacts.MODEL_FILENAME
+    return str(metadata.get("selected_model", artifacts.MODEL_FILENAME))
 
 
 def _selected_cv_rmse() -> float:
@@ -151,18 +160,13 @@ def _selected_cv_rmse() -> float:
     a (wider, honest) band rather than failing. Reuses the ``models`` table ``train.py`` writes.
     """
     default = 3.0
-    if not METADATA_PATH.exists():
+    metadata = _metadata()
+    if metadata is None:
         return default
-    try:
-        import json
-
-        metadata = json.loads(METADATA_PATH.read_text())
-        selected = metadata.get("selected_model")
-        for model in metadata.get("models", []):
-            if model.get("model") == selected and model.get("cv_rmse") is not None:
-                return float(model["cv_rmse"])
-    except (OSError, ValueError, TypeError):
-        return default
+    selected = metadata.get("selected_model")
+    for model in metadata.get("models", []):
+        if model.get("model") == selected and model.get("cv_rmse") is not None:
+            return float(model["cv_rmse"])
     return default
 
 

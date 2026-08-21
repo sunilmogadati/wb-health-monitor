@@ -4,7 +4,16 @@
 
 **Created**: 2026-08-19
 
-**Status**: Draft — needs `/speckit.clarify` review before Accepted
+**Status**: Accepted (2026-08-20).
+
+**Clarifications (2026-08-20)**:
+- **Web compute (FR-002)** → **ECS Fargate + a single ALB** (path-routes `/api/*` → API, `/*` →
+  dashboard); App Runner declined. Matches the scheduled-Fargate pipeline task and one shared ECR image.
+- **Migrations (FR-003)** → the app **has Alembic** (`backend/alembic/`), so the deploy runs
+  `alembic upgrade head` against RDS as a real migration step (not a hand-rolled DDL script).
+- **Model artifact (FR-006)** → shared via **S3**, selected by a single env var
+  (`MODEL_ARTIFACT_DIR`): a local path by default, `s3://bucket/prefix` in the cloud. Implemented in
+  this cycle (the one in-app change deployment needs); `terraform apply` is a credentialed step.
 
 **Depends on**: specs 001–006 (the full application: pipeline, warehouse, model, API, AI, dashboard).
 
