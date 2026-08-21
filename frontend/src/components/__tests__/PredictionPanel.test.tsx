@@ -55,6 +55,9 @@ describe("PredictionPanel", () => {
       year: 2028,
       projected_indicators: { health_spend_pct_gdp: 5.1, internet_pct: 100.0 },
       forecast_life_expectancy: 64.7,
+      forecast_low: 58.1,
+      forecast_high: 71.3,
+      interval_method: "indicative ± model error (cv_rmse), widened with the forecast horizon",
       is_forecast: true,
       based_on_years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
       caveat: "Forecast, not an observation. Read as a scenario — 'if current trends hold'.",
@@ -70,6 +73,7 @@ describe("PredictionPanel", () => {
 
     expect(await screen.findByText(/64\.7 yrs/)).toBeInTheDocument();
     expect(screen.getByText(/Forecast · 2028/)).toBeInTheDocument();
+    expect(screen.getByText(/indicative 58\.1–71\.3/)).toBeInTheDocument();
     expect(screen.getByText(/if current trends hold/)).toBeInTheDocument();
     expect(screen.getByText(/health_spend_pct_gdp:/)).toBeInTheDocument();
     // The forecast path must NOT hit the observed-year endpoints.

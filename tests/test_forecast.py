@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 from ml.features import FEATURES
-from ml.forecast import MIN_POINTS, _project_linear, forecast_features
+from ml.forecast import MIN_POINTS, _project_linear, forecast_features, indicative_interval
 
 from app import main as app_main
 
@@ -65,7 +65,28 @@ def test_forecast_features_declines_when_a_feature_is_too_sparse() -> None:
     assert MIN_POINTS == 3  # documents the threshold the test relies on
 
 
-# --- endpoint contract (FR-001, FR-004, FR-005, FR-006) -----------------------------------------
+# --- indicative interval (FR-009, SC-005) -------------------------------------------------------
+
+
+def test_indicative_interval_brackets_the_point() -> None:
+    low, high = indicative_interval(60.0, cv_rmse=2.76, horizon_years=1)
+    assert low < 60.0 < high
+
+
+def test_indicative_interval_widens_with_horizon() -> None:
+    near = indicative_interval(60.0, cv_rmse=2.76, horizon_years=1)
+    far = indicative_interval(60.0, cv_rmse=2.76, horizon_years=6)
+    near_width = near[1] - near[0]
+    far_width = far[1] - far[0]
+    assert far_width > near_width
+
+
+def test_indicative_interval_low_bound_never_negative() -> None:
+    low, _ = indicative_interval(1.0, cv_rmse=2.76, horizon_years=6)
+    assert low == 0.0
+
+
+# --- endpoint contract (FR-001, FR-004, FR-005, FR-006, FR-009) ----------------------------------
 
 
 class _FakeConn:
@@ -88,6 +109,7 @@ def _wire(monkeypatch, latest: int, history: list[dict[str, Any]]) -> TestClient
     monkeypatch.setattr(app_main, "country_history", lambda conn, country: history)
     monkeypatch.setattr(app_main, "_load_model", lambda: _FakeModel())
     monkeypatch.setattr(app_main, "_model_name", lambda: "fake_model")
+    monkeypatch.setattr(app_main, "_selected_cv_rmse", lambda: 2.76)
     return TestClient(app_main.app)
 
 
@@ -103,6 +125,9 @@ def test_forecast_future_year_returns_labelled_forecast(monkeypatch) -> None:
     assert set(body["projected_indicators"]) == set(FEATURES)
     assert body["based_on_years"] == list(range(2015, 2023))
     assert "if current trends hold" in body["caveat"]
+    # Indicative interval (FR-009): brackets the point, labelled indicative (not a formal CI).
+    assert body["forecast_low"] < body["forecast_life_expectancy"] < body["forecast_high"]
+    assert "indicative" in body["interval_method"].lower()
 
 
 def test_forecast_rejects_observed_year_and_points_to_predict(monkeypatch) -> None:

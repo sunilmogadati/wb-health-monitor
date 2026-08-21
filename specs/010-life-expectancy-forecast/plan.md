@@ -41,3 +41,21 @@ Deliberately **not** modelling feature interactions or a stochastic forecast —
   → `None`.
 - Contract (TestClient, monkeypatched conn + model): future year → forecast + `is_forecast`; year 2022
   → 400; sparse history → 422.
+
+## v1.1.0 amendment — indicative interval (FR-009)
+
+**Method (deliberately honest, model-agnostic, deterministic):** the band is the **selected model's
+own out-of-sample error** — `cv_rmse` from `life_expectancy_metadata.json` (already produced by
+`make train`, no new artifact) — **widened by the forecast horizon** because the inputs are
+themselves extrapolated: `half_width = cv_rmse * sqrt(horizon_years)`, `horizon_years = year -
+max_year`. `forecast_low = max(0, point - half)`, `forecast_high = point + half`.
+
+**Why `sqrt(horizon)` and why "indicative":** errors compound with distance, so the band must widen —
+`sqrt` is a defensible "accumulating error" heuristic without pretending to a rigorous variance
+propagation. We do **not** model the input-projection variance formally, so calling it a 95% CI would
+over-claim (Principle V). It ships labelled `interval_method: "indicative ± model error, widened with
+horizon"`.
+
+- `indicative_interval` stays **pure** in `ml/forecast.py` (unit-tested: low ≤ point ≤ high, widens
+  with horizon, clamped ≥ 0). The endpoint reads `cv_rmse` from metadata and passes it in.
+- Frontend renders the range beside the point; no new endpoint, no model retrain.

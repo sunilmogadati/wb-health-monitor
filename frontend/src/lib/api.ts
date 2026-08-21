@@ -141,6 +141,9 @@ export interface ForecastResponse {
   year: number;
   projected_indicators: Record<string, number>;
   forecast_life_expectancy: number;
+  forecast_low: number;
+  forecast_high: number;
+  interval_method: string;
   is_forecast: boolean;
   based_on_years: number[];
   caveat: string;
