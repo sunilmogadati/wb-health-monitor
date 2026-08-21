@@ -41,9 +41,9 @@ resource "aws_ecs_task_definition" "api" {
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = jsonencode([{
-    name      = "api"
-    image     = "${aws_ecr_repository.api.repository_url}:${var.api_image_tag}"
-    essential = true
+    name         = "api"
+    image        = "${aws_ecr_repository.api.repository_url}:${var.api_image_tag}"
+    essential    = true
     portMappings = [{ containerPort = 8000 }]
     environment = concat(local.data_env, [
       { name = "CORS_ALLOWED_ORIGINS", value = local.app_url },

@@ -29,8 +29,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project = var.project
-      Spec    = "007-deployment-aws"
+      Project   = var.project
+      Spec      = "007-deployment-aws"
       ManagedBy = "terraform"
     }
   }
