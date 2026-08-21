@@ -1,19 +1,12 @@
 # Stateful stores: ECR (images), S3 (raw zone + model artifacts), RDS Postgres (warehouse/mart/
 # residuals). The `raw` zone and the model artifact move here intact from MinIO/local (Principle III).
 
-# --- ECR: one repo per image (FR-001) ----------------------------------------------------------
+# --- ECR: the API image (FR-001). The dashboard is a static export (no image) — see cloudfront.tf.
 
 resource "aws_ecr_repository" "api" {
   name                 = "${var.project}/api"
   image_tag_mutability = "MUTABLE"
   force_delete         = true # demo teardown (FR-012); set false for a real registry
-  image_scanning_configuration { scan_on_push = true }
-}
-
-resource "aws_ecr_repository" "web" {
-  name                 = "${var.project}/web"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
   image_scanning_configuration { scan_on_push = true }
 }
 

@@ -30,7 +30,6 @@ jobs:
     env:
       AWS_REGION: ${{ vars.AWS_REGION }}
       TF_VAR_api_image_tag: ${{ github.sha }}
-      TF_VAR_web_image_tag: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v5
 
@@ -44,14 +43,12 @@ jobs:
         id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & push images
+      - name: Build & push API image
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
         run: |
           docker build -t "$REGISTRY/${{ vars.PROJECT }}/api:${{ github.sha }}" backend
-          docker build -t "$REGISTRY/${{ vars.PROJECT }}/web:${{ github.sha }}" frontend
           docker push "$REGISTRY/${{ vars.PROJECT }}/api:${{ github.sha }}"
-          docker push "$REGISTRY/${{ vars.PROJECT }}/web:${{ github.sha }}"
 
       - uses: hashicorp/setup-terraform@v3
 
@@ -70,11 +67,26 @@ jobs:
         working-directory: infra
         run: terraform apply -auto-approve tfplan
 
+      - name: Build & deploy dashboard (static export → S3 + CloudFront)
+        working-directory: frontend
+        env:
+          # Relative, same-origin base — CloudFront routes /api/* to the ALB (no baked absolute URL).
+          NEXT_PUBLIC_API_BASE: /api/v1
+        run: |
+          bucket=$(cd ../infra && terraform output -raw web_bucket)
+          dist=$(cd ../infra && terraform output -raw cloudfront_distribution_id)
+          npm ci
+          npm run build            # emits ./out (output: 'export')
+          aws s3 sync out "s3://$bucket" --delete
+          aws cloudfront create-invalidation --distribution-id "$dist" --paths "/*"
+
       - name: Run DB migrations (alembic upgrade head)
         working-directory: backend
         run: |
           pip install -e ".[dev]"
-          # DATABASE_URL is assembled from the db secret by the deploy environment (see README).
+          secret_arn=$(cd ../infra && terraform output -raw db_secret_arn)
+          creds=$(aws secretsmanager get-secret-value --secret-id "$secret_arn" --query SecretString --output text)
+          export DATABASE_URL=$(echo "$creds" | python -c "import json,sys;c=json.load(sys.stdin);print(f\"postgresql+psycopg://{c['username']}:{c['password']}@{c['host']}:{c['port']}/{c['dbname']}\")")
           alembic upgrade head
 
       - name: Post-deploy smoke test (FR-011)

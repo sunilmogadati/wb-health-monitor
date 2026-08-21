@@ -3,8 +3,6 @@
 # Secrets Manager by the execution role (FR-007) — never baked into the image or task def in plaintext.
 
 locals {
-  app_url = local.https_enabled ? "https://${aws_lb.main.dns_name}" : "http://${aws_lb.main.dns_name}"
-
   # DB connection pulled from the db secret's JSON keys (ECS `secrets` valueFrom supports :key::).
   db_secrets = [
     { name = "POSTGRES_USER", valueFrom = "${aws_secretsmanager_secret.db.arn}:username::" },
@@ -13,10 +11,11 @@ locals {
     { name = "POSTGRES_DB", valueFrom = "${aws_secretsmanager_secret.db.arn}:dbname::" },
   ]
 
-  # Non-secret config the model/AI code reads (FR-006/FR-008).
+  # Non-secret config the model/AI code reads (FR-006/FR-008). Note: S3_ENDPOINT_URL + S3_ACCESS_*
+  # are deliberately NOT set here — unset means boto3 uses AWS's default endpoint + the IAM task role.
   data_env = [
     { name = "MODEL_ARTIFACT_DIR", value = "s3://${aws_s3_bucket.artifacts.bucket}/models" },
-    { name = "S3_RAW_BUCKET", value = aws_s3_bucket.raw.bucket },
+    { name = "S3_BUCKET_RAW", value = aws_s3_bucket.raw.bucket },
     { name = "PGPORT", value = "5432" },
   ]
 }
@@ -83,54 +82,8 @@ resource "aws_ecs_service" "api" {
   depends_on = [aws_lb_listener.http]
 }
 
-# --- Web (dashboard) service -------------------------------------------------------------------
-
-resource "aws_ecs_task_definition" "web" {
-  family                   = "${var.project}-web"
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = var.web_cpu
-  memory                   = var.web_memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
-
-  container_definitions = jsonencode([{
-    name      = "web"
-    image     = "${aws_ecr_repository.web.repository_url}:${var.web_image_tag}"
-    essential = true
-    portMappings = [{ containerPort = 3000 }]
-    environment = [
-      { name = "NEXT_PUBLIC_API_BASE", value = "${local.app_url}/api/v1" },
-    ]
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.main.name
-        "awslogs-region"        = var.region
-        "awslogs-stream-prefix" = "web"
-      }
-    }
-  }])
-}
-
-resource "aws_ecs_service" "web" {
-  name            = "${var.project}-web"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.web.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets         = aws_subnet.private[*].id
-    security_groups = [aws_security_group.tasks.id]
-  }
-  load_balancer {
-    target_group_arn = aws_lb_target_group.web.arn
-    container_name   = "web"
-    container_port   = 3000
-  }
-  depends_on = [aws_lb_listener.http]
-}
+# The dashboard is NOT an ECS service — it is a static export on S3 + CloudFront (cloudfront.tf,
+# FR-002 v1.1.0). Only the API + the batch pipeline run on Fargate.
 
 # --- Batch pipeline task (not a service — run on a schedule, FR-005) ---------------------------
 

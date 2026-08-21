@@ -1,7 +1,7 @@
 # What CI/CD and an operator need after apply.
 
 output "app_url" {
-  description = "Public URL of the dashboard (and /api/v1 for the API)."
+  description = "Public URL of the dashboard (CloudFront); /api/v1 is proxied to the ALB same-origin."
   value       = local.app_url
 }
 
@@ -14,8 +14,14 @@ output "ecr_api_repository_url" {
   value = aws_ecr_repository.api.repository_url
 }
 
-output "ecr_web_repository_url" {
-  value = aws_ecr_repository.web.repository_url
+output "web_bucket" {
+  description = "S3 bucket the built dashboard (frontend/out) is synced to."
+  value       = aws_s3_bucket.web.bucket
+}
+
+output "cloudfront_distribution_id" {
+  description = "For cache invalidation after a web deploy."
+  value       = aws_cloudfront_distribution.web.id
 }
 
 output "ecs_cluster" {
@@ -30,6 +36,11 @@ output "pipeline_task_definition" {
 output "rds_endpoint" {
   value     = aws_db_instance.main.address
   sensitive = true
+}
+
+output "db_secret_arn" {
+  description = "Secrets Manager ARN holding the DB creds — CI reads it to build DATABASE_URL for migrations."
+  value       = aws_secretsmanager_secret.db.arn
 }
 
 output "artifacts_bucket" {

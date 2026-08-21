@@ -4,7 +4,19 @@
 
 **Created**: 2026-08-19
 
-**Status**: Accepted (2026-08-20).
+**Status**: Accepted (2026-08-20) · amended to **v1.1.0** (2026-08-21).
+
+**Version**: 1.1.0
+
+**Amendment history**:
+- **1.1.0 (2026-08-21)** — architecture amendment: the **dashboard moves off ECS to S3 + CloudFront**
+  (it is a pure client-side SPA → a Next.js **static export**), so there is no web container, no web
+  Fargate service, and no missing web Dockerfile. **FR-002** now hosts only the API on ECS/ALB; the
+  web is static files behind CloudFront, with a `/api/*` CloudFront behavior pointing at the ALB so
+  the SPA calls the API **same-origin** (`/api/v1`, no baked absolute URL, no CORS) — which also
+  resolves the build-time-URL ordering risk. **FR-008** updated accordingly. Also: **FR-004** — the
+  raw-zone S3 client now treats an unset `S3_ENDPOINT_URL` as "AWS default endpoint" (was defaulting
+  to MinIO), and a `.env.example` documents env per environment (**T002/T003**).
 
 **Clarifications (2026-08-20)**:
 - **Web compute (FR-002)** → **ECS Fargate + a single ALB** (path-routes `/api/*` → API, `/*` →
@@ -77,9 +89,11 @@ API, and how CI/CD ships changes.
 ## Requirements *(mandatory)*
 
 - **FR-001** — **Container registry**: both images (API, frontend) are built and pushed to **ECR**.
-- **FR-002** — **Compute**: the **API** and **dashboard** run as **ECS Fargate services behind a single
-  Application Load Balancer** (HTTPS; path routing `/api/*` → API, `/*` → dashboard). *(App Runner is an
-  accepted lighter alternative for the two web services — decide in `/speckit.clarify`.)*
+- **FR-002** — **Compute** *(amended v1.1.0)*: the **API** runs as an **ECS Fargate service behind an
+  Application Load Balancer**. The **dashboard** is a **Next.js static export served from S3 +
+  CloudFront** (a pure client SPA — no server rendering, so no web container). CloudFront's default
+  behavior serves the SPA from S3; a `/api/*` behavior forwards to the ALB, so the browser reaches the
+  API **same-origin**. *(Superseded the v1.0.0 "both web services on ECS Fargate + ALB".)*
 - **FR-003** — **Database**: Postgres runs on **RDS** (managed, persistent); the warehouse + mart +
   residuals live there. **Alembic migrations** run as a deploy step against RDS.
 - **FR-004** — **Object store**: the `raw` zone moves from MinIO to **S3**. Because the code uses
@@ -93,8 +107,12 @@ API, and how CI/CD ships changes.
   path — see Dependencies.)*
 - **FR-007** — **Secrets**: `ANTHROPIC_API_KEY` and DB credentials are stored in **AWS Secrets
   Manager** and injected into task definitions. **No secret is committed**; `.env` stays local-only.
-- **FR-008** — **Config for prod**: `CORS_ALLOWED_ORIGINS` is set to the deployed dashboard origin;
-  the dashboard's `NEXT_PUBLIC_API_BASE` points at the deployed API; DB/S3 come from env.
+- **FR-008** — **Config for prod** *(amended v1.1.0)*: the dashboard is built with
+  `NEXT_PUBLIC_API_BASE=/api/v1` (a **relative, same-origin** base — CloudFront routes `/api/*` to the
+  ALB), so no absolute API URL is baked in and CORS is moot; `CORS_ALLOWED_ORIGINS` is still set to the
+  CloudFront origin as defense-in-depth; DB/S3 come from env. **The raw-zone S3 client uses AWS's
+  default endpoint when `S3_ENDPOINT_URL` is unset** (local dev sets it to MinIO); a `.env.example`
+  documents every knob (no values) so config differs per environment, not per code path.
 - **FR-009** — **Infrastructure as code**: all of the above is **Terraform** (VPC/subnets/security
   groups, ECR, RDS, S3, ECS cluster/services/task-defs, ALB, EventBridge schedule, Secrets Manager,
   IAM roles) under `infra/`. No click-ops; state stored remotely (S3 backend + DynamoDB lock).

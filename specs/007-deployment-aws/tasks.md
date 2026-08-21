@@ -9,10 +9,11 @@
 - [x] **T001** Make the model artifact path env-driven (`MODEL_ARTIFACT_DIR`): `ml/artifacts.py`
   storage shim (local path default, `s3://…` in prod); `ml/train.py` writes + `app/main.py` loads via
   it. Local branch unit-tested; `make train` + `/predict` verified. (FR-006)
-- [ ] **T002** Confirm the `boto3` object-store client works against real S3 (no custom endpoint + IAM
-  creds) as well as MinIO locally, driven by env. (FR-004)
-- [ ] **T003** Prod config knobs: `CORS_ALLOWED_ORIGINS`, `NEXT_PUBLIC_API_BASE`, DB + S3 from env;
-  document them in `.env.example` (no values). (FR-008)
+- [x] **T002** `load_wdi.s3_client_kwargs()` — env-driven: unset `S3_ENDPOINT_URL`/keys ⇒ AWS default
+  endpoint + IAM role (prod); `.env` sets MinIO (local). Unit-tested. *(Live-against-real-S3 confirm is
+  a cloud-session check.)* (FR-004)
+- [x] **T003** Prod config knobs documented in `.env.example` (no values): DB/S3/LLM/CORS +
+  `NEXT_PUBLIC_API_BASE=/api/v1` (same-origin static export). (FR-008)
 
 ## Phase 1 — Terraform foundation
 - [x] **T004** Remote state: S3 backend + DynamoDB lock; `infra/` root + provider/versions. (FR-009)
