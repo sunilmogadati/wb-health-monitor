@@ -35,6 +35,10 @@ resource "aws_ecs_task_definition" "api" {
   family                   = "${var.project}-api"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "ARM64"
+  }
   cpu                      = var.api_cpu
   memory                   = var.api_memory
   execution_role_arn       = aws_iam_role.execution.arn
@@ -91,6 +95,10 @@ resource "aws_ecs_task_definition" "pipeline" {
   family                   = "${var.project}-pipeline"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "ARM64"
+  }
   cpu                      = 512
   memory                   = 1024
   execution_role_arn       = aws_iam_role.execution.arn
