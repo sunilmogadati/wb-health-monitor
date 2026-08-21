@@ -4,7 +4,8 @@
 
 **Created**: 2026-08-19
 
-**Status**: Accepted (2026-08-20) · amended to **v1.1.0** (2026-08-21).
+**Status**: Accepted (2026-08-20) · amended to **v1.2.0** (2026-08-21) · **deployed + verified live on
+AWS** (2026-08-21), then torn down.
 
 **Version**: 1.2.0
 

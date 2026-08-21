@@ -104,6 +104,9 @@ MWAA environment (012), destroy those roots too — endpoints/environments bill 
 
 ## Rough cost (single-AZ demo, us-east-1)
 
-NAT (~$32/mo) + ALB (~$16/mo) + RDS t4g.micro (~$12/mo) + CloudFront/WAF/S3 (traffic-based, cents) +
-Fargate (api ~$9/mo, pipeline per-run). ≈ **$70–90/mo** left running; **~$0** after `destroy`. The VPC
-endpoints trade a little hourly cost for less NAT egress at scale.
+NAT (~$32/mo) + **4 interface VPC endpoints (~$29/mo)** + ALB (~$16/mo) + RDS t4g.micro (~$12/mo) +
+**WAF (~$9/mo)** + Fargate api (~$9/mo, pipeline per-run) + CloudFront/S3/Secrets (~cents). ≈
+**$100–110/mo** left running; **~$0** after `destroy`. **Leaner option ~$70/mo:** drop
+`vpc_endpoints.tf` (−$29 — a prod-scale optimization that at demo traffic costs more than it saves) and
+`waf.tf` (−$9). Full per-resource breakdown: `infra/RESOURCES.md`. Left running only a few hours for a
+demo, the cost is well under a dollar.
