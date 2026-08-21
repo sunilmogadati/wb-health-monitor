@@ -186,3 +186,26 @@ export function getForecastSeries(
   const params = new URLSearchParams({ country, indicator });
   return getJson<ForecastSeriesResponse>(`/forecast/series?${params.toString()}`);
 }
+
+// --- Agent (spec 011 /agent/*): a multi-step LangGraph agent over the governed tools ---
+// Unlike /ask (single round), the agent plans → calls tools in sequence → synthesizes, and returns
+// the steps it took. `analyze` is the user-facing planner mode.
+
+export interface AgentStep {
+  tool: string;
+  summary: string;
+}
+
+export interface AgentResponse {
+  mode: string;
+  answer: string;
+  steps: AgentStep[];
+  citations: AskCitation[];
+  grounded: boolean;
+  caveat: string;
+}
+
+export function getAgentAnalyze(question: string): Promise<AgentResponse> {
+  const params = new URLSearchParams({ q: question });
+  return getJson<AgentResponse>(`/agent/analyze?${params.toString()}`);
+}

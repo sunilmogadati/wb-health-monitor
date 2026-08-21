@@ -39,6 +39,8 @@ ai = [
   "anthropic>=0.40",
   "langchain>=0.3",
   "langchain-anthropic>=0.3",
+  "langgraph>=0.2",  # spec 011: the multi-step agent graph (create_react_agent)
+  "langsmith>=0.1",  # spec 011: tracing (active only when LANGSMITH_* env is set)
 ]
 
 [build-system]
@@ -78,10 +80,17 @@ module = [
   "botocore", "botocore.*",
   "wbgapi", "wbgapi.*",
   "langchain", "langchain.*",
+  "langchain_core", "langchain_core.*",
   "langchain_anthropic", "langchain_anthropic.*",
+  "langgraph", "langgraph.*",
+  "langsmith", "langsmith.*",
   "anthropic", "anthropic.*",
 ]
 follow_imports = "skip"
+# `follow_imports = skip` only skips .py source; a .pyi STUB is still parsed unless this is set. Newer
+# numpy ships a PEP-695 (`type X = ...`) stub our 3.11 target can't parse — this keeps that stub (and
+# every stub in this vendor list) unparsed, so a dependency bump can't crash the build.
+follow_imports_for_stubs = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
