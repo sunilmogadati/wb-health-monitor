@@ -23,10 +23,13 @@ Everything runs in Docker, so you don't install Python or Postgres locally. Foll
 | **A GitHub account** | to fork and open pull requests |
 | **Docker Desktop** | **installed and _running_** — this is the only heavy dependency. Check: `docker --version` and that the Docker whale icon is up |
 | **A terminal + an editor** | VS Code, Cursor, or similar |
-| *(optional)* Python 3.13 + [`uv`](https://docs.astral.sh/uv/) | only if you want to run lint/tests outside the container |
+| *(optional)* Python 3.13 + [`uv`](https://docs.astral.sh/uv/) | for lint/tests outside the container, **and to run the data pipeline** (`make ingest/dbt-build/train`) — those run on the host |
+| *(optional)* Node 20+ | to run the **dashboard** (`frontend/`) locally |
 | *(optional)* GitHub CLI (`gh`) | convenient for forking/PRs |
 
-> You do **not** need to install Python, Postgres, or any packages on your machine — the containers carry them.
+> To run **the API + DB + object store**, you only need Docker — the containers carry Python/Postgres.
+> The **data pipeline** (`make ingest/dbt-build/train`) and the **dashboard** run on the host (Python +
+> Node) — see the prerequisites above.
 
 ### 1. Get the code
 
@@ -104,7 +107,7 @@ S3_BUCKET_RAW=raw
 make up
 ```
 
-This builds the API image, starts the **app** and **db** containers, and waits until they are healthy.
+This builds the API image, starts the **app**, **db**, and **minio** containers, and waits until they are healthy.
 The **first** run pulls the Postgres image and builds the API image, so it can take a few minutes.
 
 ### 4. Verify it's running
@@ -121,6 +124,20 @@ Open in your browser:
 - **MinIO console (object storage):** http://localhost:9001 — sign in with `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from your `.env`
 
 *(If you changed the ports, use your values.)*
+
+### 5. Run the dashboard (the UI) — optional
+
+The dashboard is a **Next.js** app in `frontend/` (not in the Docker stack — run it directly with
+Node 20+):
+
+```bash
+cd frontend
+npm install
+NEXT_PUBLIC_API_BASE=http://localhost:8000/api/v1 npm run dev   # → http://localhost:3000
+```
+
+It calls the API you started in step 3. (First run needs data — see "Seed the data pipeline" below,
+or the benchmark/charts show "no data".)
 
 You're set up. 🎉
 
@@ -141,6 +158,19 @@ Run `make help` to see them all. The ones you'll use most:
 | `make test` | Run the test suite |
 | `make lint` / `make typecheck` / `make format` | Lint / type-check / auto-format |
 | `make ci` | Run **everything CI runs** (lint + typecheck + format-check + test) |
+
+**Seed the data pipeline** (World Bank data → warehouse → model). These run on the **host** and need
+the extra deps (`pip install -e "backend[ml,warehouse]"`), except where they exec into the container:
+
+| Command | What it does |
+|---|---|
+| `make ingest` | Pull WB WDI data, load into Postgres, flag anomalies (spec 001 / 008) |
+| `make dbt-build` | Build the warehouse star schema + `published` mart, run dbt tests (spec 003) |
+| `make train` | Train + compare models, save the winner, publish residuals (spec 002) |
+| `make flag` | Re-run only the data-quality flag step (spec 008) |
+
+Run `make ingest dbt-build train` once to populate the mart, then the dashboard + AI endpoints have
+real data.
 
 Edits to `backend/` reload automatically — the source is bind-mounted into the container and
 `uvicorn --reload` is on.
@@ -185,13 +215,16 @@ This project follows **Spec-Driven Development** (GitHub Spec Kit). The flow is
 ## Project layout
 
 ```
-backend/          FastAPI app (app/main.py), Alembic migrations, Dockerfile, pyproject.toml
+backend/          FastAPI app (app/), ML (ml/), AI (ai/, agent), evals (evals/), scripts, dbt, Dockerfile
+frontend/         Next.js dashboard (static-export SPA) — run with Node; deploys to S3+CloudFront
+infra/            Terraform for AWS (007) + sagemaker/ (009) + mwaa/ (012) + teardown.sh + RESOURCES.md
 tests/            the test suite
 compose.yaml      the local stack: api (FastAPI) + db (Postgres 16) + minio (object storage)
 Makefile          the dev commands above
 .specify/         Spec Kit: constitution, templates, scripts
 .claude/          commands, agents, and skills for the workflow
-docs/             data-and-storage.md (data source + MinIO) · adr/ (decisions)
+docs/             README (start here) · ARCHITECTURE · DEPLOYMENT · PROJECT_BRIEF · data-and-storage · adr/
+specs/            001–012 (the specs: ingestion → warehouse → model → API → dashboard → deploy → eval → agent)
 .env.example      copy to .env (never commit .env)
 ```
 
