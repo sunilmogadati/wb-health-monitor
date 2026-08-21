@@ -1,11 +1,9 @@
 # WB Health-Systems Performance Monitor — Project Brief
 
 > **📍 Authoritative current status = the [Build status](#build-status-2026-08-19) table below.** The
-> later "Where we are / Next / building toward" narrative (Parts 5, 7, 7½) is the **original build
-> story and is intentionally historical** — where it uses future tense or older names
-> (`published.rpt_*`, `dim_entity`, `make build`), the table + Part 6 are correct. Everything through
-> spec **012** is built; the AWS stack was **deployed + verified live** on 2026-08-21 (see
-> `docs/DEPLOYMENT.md`).
+> later "Where we are" narrative (Parts 5, 7, 7½) is the original build story; its object/table names
+> have been reconciled to the shipped schema (Part 6). Everything through spec **012** is built, and
+> the AWS stack was **deployed + verified live** on 2026-08-21 (see `docs/DEPLOYMENT.md`).
 
 **Project:** World Bank **Health-Systems Performance Monitor**
 **Audience:** the engineering team building this project.
@@ -382,13 +380,13 @@ Each stage is one `make` target; data only moves forward when its quality tests 
 | Step | Command | What happens |
 |---|---|---|
 | 1. Create schemas | `make migrate` | create the `raw` / `staging` / `warehouse` / `published` schemas + tables |
-| 2. Seed reference data | `make seed` | load the dimension registries: the 4 indicators (code, unit, polarity) → `dim_indicator`; the region→country tree → `dim_entity` (from `wbgapi` region metadata) |
-| 3. Ingest | `make ingest` | pull WDI via `wbgapi` for the chosen indicators/economies/years → `raw.wdi_observation` + one row in `raw.pull_log`. **Idempotent** — safe to re-run |
-| 4. Build | `make build` | run the transforms: `raw → staging` (clean/type + **DQ tests**) → `warehouse` (dims + fact) → `published` (report marts). A blocking test failure **halts promotion** |
-| 5. Train | `make train` | train & evaluate several models on the warehouse; write predictions → `published.rpt_performance_gap` |
-| 6. Verify | `make status` · `curl /health` | confirm the stack is healthy and the marts have rows **before** opening the UI |
+| 2. Seed reference data | `make seed` | load the dimension registries: the 4 indicators (code, unit, polarity) → `dim_indicator`; the region→country tree → `dim_country` (from `wbgapi` region metadata) |
+| 3. Ingest | `make ingest` | pull WDI via `wbgapi` for the chosen indicators/economies/years → an immutable CSV per pull in MinIO `raw` (`world_bank_wdi/pull_<id>/wdi_observation.csv`) + one row in `ingestion.pull_log`. **Idempotent** — safe to re-run |
+| 4. Build | `make dbt-build` | run the transforms: `raw → staging` (clean/type + **DQ tests**) → `warehouse` (dims + fact) → `published` (report marts). A blocking test failure **halts promotion** |
+| 5. Train | `make train` | train & evaluate several models on the warehouse; write predictions → `published.model_residual` |
+| 6. Verify | `make status` · `curl /api/v1/health` | confirm the stack is healthy and the marts have rows **before** opening the UI |
 
-*(`make ingest` + `make build` are the `wbgapi`-pull and the dbt-style transform.)*
+*(`make ingest` + `make dbt-build` are the `wbgapi`-pull and the dbt-style transform.)*
 
 ---
 
@@ -466,9 +464,9 @@ Stamped from the project starter, so everyone runs an **identical** stack.
 
 `.env` (copied from `.env.example`) sets ports + Postgres creds. **Remap host ports into a private range** (e.g. `1x000`) so nothing on your machine clashes:
 ```
-API_PORT=18000
+API_PORT=8000
 POSTGRES_PORT=15432
-WEB_PORT=13000
+WEB_PORT=3000
 POSTGRES_DB=wbhealth
 POSTGRES_USER=wbhealth
 POSTGRES_PASSWORD=wbhealth_local_dev
@@ -479,17 +477,17 @@ POSTGRES_PASSWORD=wbhealth_local_dev
 cp .env.example .env          # set the ports + creds above
 make up                       # build + start app + db, wait for health
 make migrate                  # create raw / staging / warehouse / published
-make seed                     # load dim_indicator + dim_entity (region→country)
+make seed                     # load dim_indicator + dim_country (region→country)
 make ingest                   # pull WDI via wbgapi → raw
-make build                    # raw → staging (DQ tests) → warehouse → published
-make train                    # train/eval models → published.rpt_performance_gap
+make dbt-build                # raw → staging (DQ tests) → warehouse → published
+make train                    # train/eval models → published.model_residual
 
 # verify BEFORE opening a browser:
-curl -s localhost:18000/health     # expect {"status":"ok"} + model_loaded:true
-curl -s localhost:18000/api/meta   # model card + row counts
+curl -s localhost:8000/api/v1/health   # expect {"status":"alive"}
+curl -s localhost:8000/api/meta        # model card + row counts
 
-open http://localhost:18000/docs   # API (Swagger)
-open http://localhost:13000        # dashboard (if the web service is built)
+open http://localhost:8000/docs    # API (Swagger)
+open http://localhost:3000         # dashboard (if the web service is built)
 ```
 
 > **Note — auth is stretch.** If the team adds Auth0 later, a common trick: a commented `DEV_LOGIN_BYPASS=true` in `.env.example` gives a password-less local sign-in (dev personas) so you don't need a real identity provider to develop. **Not needed for the core (public-data) build.**
@@ -501,9 +499,9 @@ open http://localhost:13000        # dashboard (if the web service is built)
 ## Part 7½ — Operating the pipeline, end to end (with a manual check at every step)
 
 The operator's runbook: build the stack, land the data, transform it, and **verify each stage before
-moving to the next**. Some steps work today (`make up`, `make migrate`); others are the specs the
-team builds (`make seed`, `make ingest`, `make dbt-build`) — the commands and checks below are the
-**target shape** they're building toward.
+moving to the next**. All of these steps work today — `make up`, `make migrate`, `make seed`,
+`make ingest`, and `make dbt-build` are all built — and the commands and checks below are the
+shape the team built.
 
 **What MinIO is.** MinIO is **S3-compatible object storage that runs in Docker** — you `PUT`/`GET`
 files ("objects") into "buckets" over the *same API* as Amazon S3. We use it as the immutable **`raw`
@@ -520,14 +518,14 @@ object store for the lake, warehouse for the queries.
 | 2 | **Create schemas, tables & views** | `make migrate` | `psql -c "\dn"` (schemas), `\dt ingestion.* warehouse.* published.*` (tables), `\dv published.*` (views) |
 | 3 | **Register the data source** | `make seed` | `psql -c "select * from ingestion.data_sources"` → the WB WDI source with its indicators, economies, year range |
 | 4 | **Get the dataset (ingest → raw)** | `make ingest` | MinIO console → objects under `raw/wdi/<date>/`; `psql -c "select status, rows_fetched from ingestion.pull_log order by started_at desc limit 1"` → `succeeded` |
-| 5 | **Transform (dbt: raw → staging → warehouse → published)** | `make dbt-build` | dbt prints model **+ test** results (all pass); `psql -c "select count(*) from warehouse.fact_indicator"` and `select * from published.rpt_country_year limit 5` |
+| 5 | **Transform (dbt: raw → staging → warehouse → published)** | `make dbt-build` | dbt prints model **+ test** results (all pass); `psql -c "select count(*) from warehouse.fact_indicator"` and `select * from published.country_year_indicators limit 5` |
 | 6 | **Update the tables (refresh)** | re-run `make ingest` then `make dbt-build` | a **new** `pull_log` row; `max(year)` / row counts in `published.*` reflect the new pull; prior `raw` objects unchanged (immutable) |
 
 ### The commands, one level deeper
 
 - **`make up`** — `docker compose up --build --wait`: builds the API image, starts `api` + `db` + `minio`, waits for health. Re-run after changing dependencies (it rebuilds the image).
 - **`make migrate`** — `alembic upgrade head` inside the api container: applies every migration in `backend/alembic/versions/` to the DB, creating the `ingestion` / `warehouse` / `published` schemas + their tables and views. Reverse the last one with `make migrate-down`.
-- **`make seed`** — loads *config*, not data: the **datasource registry** (`ingestion.data_sources` — which indicators, economies, and years to pull) and the dimension seeds (`dim_indicator` codes/units/polarity, `dim_entity` region→country tree).
+- **`make seed`** — loads *config*, not data: the **datasource registry** (`ingestion.data_sources` — which indicators, economies, and years to pull) and the dimension seeds (`dim_indicator` codes/units/polarity, `dim_country` region→country tree).
 - **`make ingest`** — runs the ingestion job: `wbgapi` pulls the registered indicators → writes immutable NDJSON to `raw/…` in MinIO → writes an `ingestion.pull_log` row. Idempotent (a repeat is a *new* pull, never an edit).
 - **`make dbt-build`** — runs **dbt**: loads `raw` (from MinIO) into `staging`, conforms into the `warehouse` star schema, aggregates into `published` marts — and runs **dbt tests** (uniqueness, not-null, ranges, freshness) that **block** promotion on failure.
 - **`make train`** — trains/compares models, applies the **data-quality gate** (filter + tripwire), writes `published.model_residual` **and** `published.data_quality_flag` (so the read API can gap anomalies).
@@ -563,14 +561,14 @@ psql "$DB" -c "select pull_id, status, rows_fetched, started_at from ingestion.p
 # raw landing: browse the 'raw' bucket in the MinIO console at http://localhost:9001
 
 psql "$DB" -c "select count(*) from warehouse.fact_indicator;"
-psql "$DB" -c "select * from published.rpt_country_year order by year desc limit 5;"
+psql "$DB" -c "select * from published.country_year_indicators order by year desc limit 5;"
 
 make shell   # then inside the container:  dbt test
 ```
 
-> **Build status:** `make up` + `make migrate` (the `ingestion.pull_log` migration) work today.
-> `make seed`, `make ingest`, and `make dbt-build` are delivered by specs `001`–`002` — the table
-> above is the flow the team is building toward.
+> **Build status:** `make up`, `make migrate` (the `ingestion.pull_log` migration), `make seed`,
+> `make ingest`, and `make dbt-build` all work today — delivered by specs `001`–`002`; the table
+> above is the flow the team built.
 
 ---
 

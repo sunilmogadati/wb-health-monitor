@@ -10,7 +10,8 @@ dashboard, deployed on AWS. Read in this order:
 | 2 | **[ARCHITECTURE.md](ARCHITECTURE.md)** | The map — system context, containers, data zones, and the **built AWS deployment + network** (Mermaid diagrams). |
 | 3 | **[DEPLOYMENT.md](DEPLOYMENT.md)** + **[../infra/RESOURCES.md](../infra/RESOURCES.md)** | The AWS runbook (manual steps vs. Terraform) + the exact resources, cost, and teardown. |
 | 4 | **[data-and-storage.md](data-and-storage.md)** | The data layer — zones, schema, provenance. |
-| 5 | **[adr/README.md](adr/README.md)** | The *why* behind each significant decision (ADRs 0001–0009). |
+| 5 | **[EVALUATION.md](EVALUATION.md)** | How the model + AI stay trustworthy — the eval gate, LLM-judge, golden cases, champion/challenger (spec 008). |
+| 6 | **[adr/README.md](adr/README.md)** | The *why* behind each significant decision (ADRs 0001–0009). |
 | — | [ROADMAP.md](ROADMAP.md) | **Historical** build sequence (specs 001–005 era) — the SDD "how we work" story, not current status. |
 
 ## The governance spine (the capstone's method story)
