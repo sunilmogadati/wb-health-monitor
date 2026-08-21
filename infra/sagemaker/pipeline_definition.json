@@ -1,0 +1,12 @@
+{
+  "_placeholder": "Regenerate with: python infra/sagemaker/pipeline.py > pipeline_definition.json (needs the SageMaker SDK). This stub only lets terraform's file() resolve; it is NOT a runnable definition.",
+  "Version": "2020-12-01",
+  "Metadata": {},
+  "Parameters": [],
+  "Steps": [
+    { "Name": "DataQuality", "Type": "Processing" },
+    { "Name": "Train", "Type": "Training" },
+    { "Name": "Evaluate", "Type": "Processing" },
+    { "Name": "OnlyRegisterIfNotWorse", "Type": "Condition" }
+  ]
+}
