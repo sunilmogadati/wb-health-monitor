@@ -29,16 +29,23 @@ rate** (demographic transition). Two *exclusions* are the real teaching points: 
 and **`under5_mortality` deliberately NOT a predictor** — it's a near-restatement of the target
 (**leakage**), which would inflate accuracy without insight.
 
-**Is information gain relevant? Yes — it's the rigorous upgrade** (a great feature-engineering exercise):
-- **Mutual information** (`mutual_info_regression`) — the regression form of *information gain*; captures
-  non-linear dependence correlation misses.
-- **Permutation importance / RandomForest `feature_importances_`** — does the trained model actually rely
-  on each feature? (RF exposes this for free — a post-hoc validation.)
-- **Correlation / VIF** — prune redundancy (GDP vs internet%).
+**And we now MEASURE it (FR-011, `train.py`).** Every training run computes and saves per-feature
+**mutual information** (`mutual_info_regression` — the regression form of *information gain*; captures
+non-linear dependence correlation misses) + the winning model's **`feature_importances_`**. The set
+stays domain-chosen (interpretable); the data *validates* it. Live result:
 
-*Lead with:* "We chose an interpretable, domain-justified set for an **honest, explainable** model;
-mutual-information ranking is the natural next step to make selection *measured*, not *expert-judged*."
-→ `docs/PROJECT_BRIEF.md` "Feature engineering — how the features were chosen."
+| feature | mutual info | model importance |
+|---|---|---|
+| fertility_rate | **0.55** | **0.62** |
+| gdp_per_capita | 0.37 | 0.11 |
+| internet_pct | 0.35 | 0.10 |
+| health_spend_pct_gdp | **0.21** | 0.17 |
+
+*Lead with:* "We chose an interpretable, domain-justified set, then **validated it with mutual
+information** — and the telling result is that **health spending has the *weakest* raw signal**, which is
+exactly why the value-for-money **residual** is the product." (Permutation importance + correlation/VIF
+are natural extensions.)
+→ `docs/PROJECT_BRIEF.md` "Feature engineering"; `backend/ml/train.py` `feature_analysis`.
 
 ### 4. Data cleanup / dedup / outliers — automated as a gate (this is rigorous)
 Runs at the **raw→staging boundary (shift-left, ADR-0007)** so bad data never reaches the mart
