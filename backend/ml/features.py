@@ -146,3 +146,38 @@ def country_year_row(conn: psycopg.Connection, country: str, year: int) -> dict[
         assert cur.description is not None
         colnames = [d.name for d in cur.description]
     return _rows_from_cursor(colnames, [row])[0]
+
+
+def country_history(conn: psycopg.Connection, country: str) -> list[dict[str, Any]]:
+    """Every published row for one country (case-insensitive code or name), ordered by year.
+
+    Feeds the forecaster (spec 010), which projects each feature from its own observed history.
+    """
+    sql = """
+        SELECT
+            country_code,
+            country_name,
+            year,
+            life_expectancy,
+            health_spend_pct_gdp,
+            gdp_per_capita,
+            internet_pct,
+            fertility_rate
+        FROM published.country_year_indicators
+        WHERE lower(country_code) = lower(%s) OR lower(country_name) = lower(%s)
+        ORDER BY year
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql, (country, country))
+        assert cur.description is not None
+        colnames = [d.name for d in cur.description]
+        return _rows_from_cursor(colnames, cur.fetchall())
+
+
+def max_year(conn: psycopg.Connection) -> int | None:
+    """Latest observed year in the published mart — the boundary between /predict and /forecast."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT max(year) FROM published.country_year_indicators")
+        row = cur.fetchone()
+        value = row[0] if row is not None else None
+        return int(value) if value is not None else None

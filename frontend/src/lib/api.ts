@@ -130,3 +130,24 @@ export function getPrediction(country: string, year: number): Promise<Prediction
   const params = new URLSearchParams({ country, year: String(year) });
   return getJson<Prediction>(`/predict?${params.toString()}`);
 }
+
+// --- Forecast (spec 010 /forecast): project the inputs forward, then predict a FUTURE year ---
+// Distinct from /predict: the inputs are themselves projected, so the result is explicitly a
+// forecast (`is_forecast`) carrying its projected inputs + a qualitative caveat — never a measurement.
+
+export interface ForecastResponse {
+  country_code: string;
+  country_name: string;
+  year: number;
+  projected_indicators: Record<string, number>;
+  forecast_life_expectancy: number;
+  is_forecast: boolean;
+  based_on_years: number[];
+  caveat: string;
+  model: string;
+}
+
+export function getForecast(country: string, year: number): Promise<ForecastResponse> {
+  const params = new URLSearchParams({ country, year: String(year) });
+  return getJson<ForecastResponse>(`/forecast?${params.toString()}`);
+}

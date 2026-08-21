@@ -160,7 +160,7 @@ export default function DashboardPage() {
 
       <SectionCard
         title="Model prediction &amp; brief"
-        hint="The model predicts what life expectancy a country should have given its spending and context; the gap to actual is the value-for-money residual. Years 2015–2022 only — the model reads each year's real inputs, so it can't forecast the future."
+        hint="For an observed year (2015–2022) the model predicts what life expectancy a country should have given its spending — the gap to actual is the value-for-money residual. For a future year (2023–2028) it projects each input forward and forecasts, clearly labelled as a scenario, not a measurement."
       >
         <PredictionPanel countries={countries ?? []} />
       </SectionCard>
