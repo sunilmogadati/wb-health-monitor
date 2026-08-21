@@ -12,6 +12,7 @@ dashboard, deployed on AWS. Read in this order:
 | 4 | **[data-and-storage.md](data-and-storage.md)** | The data layer — zones, schema, provenance. |
 | 5 | **[EVALUATION.md](EVALUATION.md)** | How the model + AI stay trustworthy — the eval gate, LLM-judge, golden cases, champion/challenger (spec 008). |
 | 6 | **[adr/README.md](adr/README.md)** | The *why* behind each significant decision (ADRs 0001–0009). |
+| ★ | **[CAPSTONE_QA.md](CAPSTONE_QA.md)** | Presenter talking points — the 8 key questions (purpose, WB mission, feature selection, data quality, model + LLM eval, orchestration, infra) with source-doc pointers. |
 | — | [ROADMAP.md](ROADMAP.md) | **Historical** build sequence (specs 001–005 era) — the SDD "how we work" story, not current status. |
 
 ## The governance spine (the capstone's method story)
