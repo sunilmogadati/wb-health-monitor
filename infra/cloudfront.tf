@@ -69,7 +69,7 @@ resource "aws_cloudfront_distribution" "web" {
   ordered_cache_behavior {
     path_pattern             = "/api/*"
     target_origin_id         = local.alb_origin_id
-    viewer_protocol_policy    = "redirect-to-https"
+    viewer_protocol_policy   = "redirect-to-https"
     allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods           = ["GET", "HEAD"]
     cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id

@@ -4,10 +4,13 @@ Terraform for the whole platform on AWS: **ECS Fargate** (API + dashboard behind
 **RDS Postgres**, **S3** (raw zone + model artifacts), a **scheduled Fargate task** for the batch
 pipeline, **Secrets Manager**, and a **GitHub OIDC** deploy role. CI/CD is `.github/workflows/deploy.yml`.
 
-> **Status: reference IaC, authored offline.** It has **not** been `terraform validate`d or applied
-> from this repo (no AWS credentials, and `apply` is billable). Treat it as a reviewed starting point:
-> run `terraform init && terraform validate && terraform plan` in a credentialed session and reconcile
-> anything the plan flags before `apply`. Sizes default to the smallest workable (single-AZ) for a demo.
+> **Status: validated, not applied.** `terraform fmt` + `terraform validate` **pass** on both roots
+> (`infra/` and `infra/sagemaker/`, AWS provider ~5.40) — the config is well-formed and
+> provider-schema-correct. It has **not** been `plan`/`apply`'d against an AWS account (no credentials,
+> and `apply` is billable), so account-specific issues (IAM policy evaluation, name collisions, real
+> API behavior) are still surfaced by the first `terraform plan`. The credentialed session:
+> uncomment the S3 backend → `init` → `plan` (reconcile anything it flags) → `apply`. Sizes default to
+> the smallest workable (single-AZ) for a demo.
 
 ## What maps where
 

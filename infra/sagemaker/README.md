@@ -1,8 +1,9 @@
 # infra/sagemaker/ — Managed MLOps on SageMaker (spec 009, alternative track)
 
 The **managed** way to run the trained model's lifecycle — train → register → gate → serve → monitor —
-as an explicit alternative to the DIY path in specs 002/008. **Reference IaC, authored offline** (not
-`terraform validate`d/applied; the SageMaker SDK is not installed here).
+as an explicit alternative to the DIY path in specs 002/008. **`terraform validate` passes** (provider
+schema-correct); **not `plan`/`apply`'d** (no AWS creds), and the SageMaker SDK builder in `pipeline.py`
+is reference-only (not installed/run here).
 
 > **Read the right-sizing note first:** for a ~357-row, 4-feature scikit-learn model this is **more
 > machinery than the model needs**. Its value is teaching/portfolio (the managed pattern end-to-end)
