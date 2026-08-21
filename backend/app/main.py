@@ -17,7 +17,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from ml.brief import CountryHealthBrief, build_brief
 from ml.features import FEATURES, TARGET, connect, country_history, country_year_row, max_year
-from ml.forecast import forecast_features
+from ml.forecast import INTERVAL_METHOD, forecast_features, indicative_interval
 from pydantic import BaseModel
 
 from app.analytics import router as analytics_router
@@ -54,6 +54,9 @@ class ForecastResponse(BaseModel):
     year: int
     projected_indicators: dict[str, float]
     forecast_life_expectancy: float
+    forecast_low: float
+    forecast_high: float
+    interval_method: str
     is_forecast: bool
     based_on_years: list[int]
     caveat: str
@@ -109,6 +112,28 @@ def _model_name() -> str:
         return str(metadata.get("selected_model", MODEL_PATH.name))
     except (OSError, ValueError, TypeError):
         return MODEL_PATH.name
+
+
+def _selected_cv_rmse() -> float:
+    """The selected model's cross-validated RMSE from metadata — the width of the forecast interval.
+
+    Falls back to a conservative default if metadata is absent/unreadable so a forecast still ships
+    a (wider, honest) band rather than failing. Reuses the ``models`` table ``train.py`` writes.
+    """
+    default = 3.0
+    if not METADATA_PATH.exists():
+        return default
+    try:
+        import json
+
+        metadata = json.loads(METADATA_PATH.read_text())
+        selected = metadata.get("selected_model")
+        for model in metadata.get("models", []):
+            if model.get("model") == selected and model.get("cv_rmse") is not None:
+                return float(model["cv_rmse"])
+    except (OSError, ValueError, TypeError):
+        return default
+    return default
 
 
 def _fetch_mart_row(country: str, year: int) -> dict[str, Any]:
@@ -215,6 +240,8 @@ def forecast(country: str, year: int) -> ForecastResponse:
 
     prediction = float(_load_model().predict(_feature_frame(dict(projected)))[0])
     based_on_years = sorted({int(row["year"]) for row in history})
+    horizon = year - (latest if latest is not None else based_on_years[-1])
+    low, high = indicative_interval(prediction, _selected_cv_rmse(), horizon)
     first = history[0]
     return ForecastResponse(
         country_code=str(first["country_code"]),
@@ -222,6 +249,9 @@ def forecast(country: str, year: int) -> ForecastResponse:
         year=year,
         projected_indicators=projected,
         forecast_life_expectancy=round(prediction, 2),
+        forecast_low=low,
+        forecast_high=high,
+        interval_method=INTERVAL_METHOD,
         is_forecast=True,
         based_on_years=based_on_years,
         caveat=FORECAST_CAVEAT,

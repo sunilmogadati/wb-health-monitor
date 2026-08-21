@@ -4,7 +4,17 @@
 
 **Created**: 2026-08-20
 
-**Status**: Draft — ready for `/speckit.clarify`
+**Status**: Accepted & implemented (2026-08-20) — merged in PR #26.
+
+**Version**: 1.1.0
+
+**Amendment history**:
+- **1.1.0 (2026-08-20)** — spec-miss/scope amendment: promoted the deferred confidence-interval item
+  (was FR-008 "out of scope") to an **in-scope requirement, FR-009** — an *indicative* range around
+  the forecast. Reason: the point-forecast reads as more precise than it is; a range makes the
+  uncertainty legible. Downstream `plan.md`/`tasks.md` re-run for the touched FR (see below).
+- **1.0.0 (2026-08-20)** — initial forecast capability (FR-001–FR-008); clarify was folded into the
+  spec (the `out of scope` boundary on FR-008 *was* the clarification), accepted, implemented.
 
 **Input**: The model (`/predict`, spec 002) scores one country-year using that year's **observed**
 features, so it stops at the last data year (2022). Users reasonably ask "what will life expectancy
@@ -76,8 +86,16 @@ what we don't."
   used, the `based_on_years`, and a caveat framing it as a trend scenario (Principle V).
 - **FR-007**: The dashboard MUST offer future years and render forecasts distinctly from observed
   predictions, showing the projected inputs and the caveat.
-- **FR-008 (out of scope)**: No confidence *interval* / prediction band is computed in this slice —
-  the caveat is qualitative. A quantified interval is a candidate follow-up.
+- **FR-009 (added in v1.1.0)**: Every forecast MUST include an **indicative range**
+  (`forecast_low`, `forecast_high`) around the point forecast, derived from the selected model's own
+  out-of-sample error (`cv_rmse` in the model metadata) **widened with the forecast horizon** (inputs
+  are extrapolated, so error compounds with distance). It MUST be labelled *indicative* (an
+  `interval_method` string), NOT a formal statistical confidence interval — the input-projection
+  uncertainty is not rigorously modelled, so over-claiming a 95% CI would be dishonest (Principle V).
+  Deterministic: same inputs → same range (Principle VI). The dashboard MUST show the range with the
+  point forecast.
+
+  *(Superseded FR-008, "no interval — qualitative caveat only", from v1.0.0.)*
 
 ### Key Entities
 
@@ -92,3 +110,6 @@ what we don't."
 - **SC-003**: Projected `internet_pct` never exceeds 100; `fertility_rate` never below its floor.
 - **SC-004**: The dashboard, on a future year, shows a forecast labelled as such with its projected
   inputs and caveat — no user could mistake it for a measured value.
+- **SC-005 (v1.1.0)**: Every forecast response carries `forecast_low` ≤ `forecast_life_expectancy` ≤
+  `forecast_high`, the band **widens** as the target year moves further past the last data year, and
+  it is labelled *indicative* (not a 95% CI). The dashboard renders the range next to the point.

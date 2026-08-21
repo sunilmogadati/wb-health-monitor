@@ -58,6 +58,29 @@ def _clamp(feature: str, value: float) -> float:
     return max(low, min(high, value))
 
 
+# Honest label for the interval: it is the model's own error widened by horizon, NOT a formal CI.
+INTERVAL_METHOD = "indicative ± model error (cv_rmse), widened with the forecast horizon"
+
+
+def indicative_interval(
+    point: float, cv_rmse: float, horizon_years: int
+) -> tuple[float, float]:
+    """An *indicative* range around a point forecast (FR-009) — deliberately not a formal CI.
+
+    Width is the selected model's own out-of-sample error (``cv_rmse`` from the model metadata)
+    widened by the forecast horizon: ``cv_rmse * sqrt(horizon_years)``. The inputs are themselves
+    extrapolated, so error compounds with distance — the band must widen the further past the data
+    we go. ``sqrt`` is a defensible "accumulating error" heuristic, not a rigorous variance
+    propagation, which is exactly why this is labelled *indicative* (Principle V). Deterministic.
+
+    ``horizon_years`` is clamped to ``>= 1`` (a forecast is always at least one year out); the low
+    bound is clamped to ``>= 0`` (life expectancy can't be negative).
+    """
+    horizon = max(1, horizon_years)
+    half_width = cv_rmse * (horizon**0.5)
+    return round(max(0.0, point - half_width), 2), round(point + half_width, 2)
+
+
 def forecast_features(
     history: list[dict[str, Any]], target_year: int
 ) -> dict[str, float] | None:

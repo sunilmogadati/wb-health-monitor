@@ -169,8 +169,16 @@ export function PredictionPanel({ countries }: { countries: CountrySummary[] }) 
               <span className="text-lg font-semibold text-slate-900">
                 {result.forecast.forecast_life_expectancy.toFixed(1)} yrs
               </span>
+              <span className="ml-2 text-sm text-slate-600">
+                · indicative {result.forecast.forecast_low.toFixed(1)}–
+                {result.forecast.forecast_high.toFixed(1)}
+              </span>
             </div>
           </div>
+          <p className="text-xs text-slate-500" title={result.forecast.interval_method}>
+            Range = the model&apos;s own error, widening the further past the data the year is — an
+            indicative band, not a formal confidence interval.
+          </p>
           <div>
             <div className="mb-1 text-xs font-medium text-slate-600">
               Projected inputs the model scored (extrapolated from{" "}
