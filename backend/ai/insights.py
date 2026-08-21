@@ -39,6 +39,22 @@ CAVEAT = (
 
 DECLINE = "I can't answer that from the published data — no matching rows were found."
 
+# The /ask answer model is CONFIGURABLE (spec 008 FR-014) — the champion is an env change, not a
+# code edit. An allowlist bounds cost/abuse; an unknown value falls back to the default.
+DEFAULT_ASK_MODEL = "claude-sonnet-4-5"
+ALLOWED_ASK_MODELS = (
+    "claude-haiku-4-5",
+    "claude-sonnet-4-5",
+    "claude-opus-4-6",
+    "claude-opus-4-8",
+)
+
+
+def resolve_ask_model(model: str | None = None) -> str:
+    """Pick the /ask model: explicit arg → ``ASK_MODEL`` env → default; unknown values fall back."""
+    candidate = model or os.getenv("ASK_MODEL", DEFAULT_ASK_MODEL)
+    return candidate if candidate in ALLOWED_ASK_MODELS else DEFAULT_ASK_MODEL
+
 _CAUSAL_TERMS = (
     "causes",
     "caused by",
@@ -218,7 +234,9 @@ def template_answer(citations: Sequence[Citation]) -> str:
     return "Based on the published mart: " + "; ".join(lines) + "."
 
 
-def _run_agent(conn: psycopg.Connection, question: str, sink: list[Citation]) -> str | None:
+def _run_agent(
+    conn: psycopg.Connection, question: str, sink: list[Citation], model: str
+) -> str | None:
     """Let Claude pick and call the query tools; return its prose, or None on any failure.
 
     Deliberately broad ``except``: this is a live external API call (FR-005/FR-006 — never let an
@@ -265,7 +283,7 @@ def _run_agent(conn: psycopg.Connection, question: str, sink: list[Citation]) ->
             )
 
         agent = create_agent(
-            model="anthropic:claude-sonnet-4-5",
+            model=f"anthropic:{model}",
             tools=[get_country_year_tool, top_by_value_for_money_tool],
             system_prompt=SYSTEM_PROMPT,
         )
@@ -276,8 +294,12 @@ def _run_agent(conn: psycopg.Connection, question: str, sink: list[Citation]) ->
         return None
 
 
-def answer_question(question: str) -> InsightResponse:
-    """Answer a plain-English question, grounded in ``published.country_year_indicators``."""
+def answer_question(question: str, model: str | None = None) -> InsightResponse:
+    """Answer a plain-English question, grounded in ``published.country_year_indicators``.
+
+    ``model`` overrides the answer model (spec 008 FR-014, used by the selection harness); it
+    defaults to the ``ASK_MODEL`` env / the configured champion.
+    """
     with connect() as conn:
         if not os.getenv("ANTHROPIC_API_KEY"):
             citations = top_by_value_for_money(conn, "life_expectancy", latest_year(conn))
@@ -286,7 +308,7 @@ def answer_question(question: str) -> InsightResponse:
             )
 
         sink: list[Citation] = []
-        answer = _run_agent(conn, question, sink)
+        answer = _run_agent(conn, question, sink, resolve_ask_model(model))
 
     if not sink:
         return InsightResponse(answer=DECLINE, citations=[], caveats=CAVEAT)

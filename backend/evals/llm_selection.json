@@ -1,0 +1,21 @@
+{
+  "selected_model": "claude-haiku-4-5",
+  "quality_floor": 0.8,
+  "rationale": "Highest-quality model at/above the 80% quality floor with the lowest output price, tie-broken by latency; scored on the golden /ask eval (deterministic + groundedness + helpfulness).",
+  "candidates": [
+    {
+      "model": "claude-sonnet-4-5",
+      "quality": 1.0,
+      "price_out": 15.0,
+      "latency_s": 5.94,
+      "checks": 24
+    },
+    {
+      "model": "claude-haiku-4-5",
+      "quality": 0.958,
+      "price_out": 5.0,
+      "latency_s": 3.17,
+      "checks": 24
+    }
+  ]
+}

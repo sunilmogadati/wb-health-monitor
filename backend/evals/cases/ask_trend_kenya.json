@@ -1,0 +1,9 @@
+{
+  "id": "ask_trend_kenya_life_expectancy",
+  "target": "ask",
+  "query": "Is the life expectancy of Kenya increasing or decreasing?",
+  "expect": {
+    "decline": false,
+    "contains_any": ["increas", "rising", "rose", "grow", "higher", "up "]
+  }
+}

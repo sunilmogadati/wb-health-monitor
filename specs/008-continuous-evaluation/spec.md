@@ -4,7 +4,19 @@
 
 **Created**: 2026-08-19
 
-**Status**: Accepted (2026-08-19)
+**Status**: Accepted (2026-08-19) · amended to **v2.0.0** (2026-08-20).
+
+**Version**: 2.0.0
+
+**Amendment history**:
+- **2.0.0 (2026-08-20)** — spec-miss/scope amendment closing three LLM-evaluation gaps found in use:
+  (a) the golden set didn't cover the answer *types* that regressed (trend, ROI/value-for-money) and
+  asserted no answer *content* → **FR-012** (regression cases + expected key-facts); (b) the judge
+  scored only groundedness, so a grounded-but-useless answer (a raw row dump) passed → **FR-013**
+  (a **helpfulness/relevance** judge dimension); (c) the LLM was pinned ad hoc with no documented
+  selection criteria, asymmetric with the ML champion/challenger → **FR-014** (an **LLM
+  champion/challenger** scored by the golden eval + `ADR-0009` + selection metadata).
+- **1.0.0 (2026-08-19)** — initial continuous-evaluation gate (FR-001–FR-011).
 
 **Clarification (2026-08-19)**: scoring is the **hybrid** — a **deterministic** gate (fast, free, runs
 on every PR) plus a **throttled LLM-as-judge** for groundedness only (on merge/schedule, not the PR
@@ -108,6 +120,31 @@ language** ("failing", "worst", "best/worst" rankings-as-judgement); a violation
   a **separate, throttled** step (e.g. on merge to `develop`/`main` and on the schedule), so PR feedback
   is fast and cheap.
 
+### v2.0.0 — LLM output evaluation & selection
+
+- **FR-012 (v2.0.0)** — **Golden regression cases + expected key-facts.** The eval set MUST include a
+  case for each `/ask` answer *type* the product supports — at minimum a **trend** question, a
+  **value-for-money / ROI** question, and the existing out-of-scope decline — and each answerable case
+  MUST assert **expected key-facts** (a deterministic `contains_any` on the answer text), so a
+  grounded-but-wrong or grounded-but-empty answer **fails**. These cases MUST cover the specific
+  regressions already fixed (a trend question that dumped rows instead of stating the trend; a
+  value-for-money question that wrongly declined) — a regression must not be able to re-merge green.
+- **FR-013 (v2.0.0)** — **Helpfulness/relevance judge dimension.** In addition to groundedness, the
+  LLM-as-judge MUST score **helpfulness** — does the answer *directly and usefully answer the
+  question*, not merely restate grounded rows? Same discipline as FR-004: pinned model, fixed rubric,
+  score + rationale, its own floor in the config; judge-unavailable is a **not-evaluated fail**, never
+  a vacuous pass. This is the dimension that catches a fully-grounded but useless answer.
+- **FR-014 (v2.0.0)** — **LLM selection criteria (champion/challenger).** The choice of LLM MUST follow
+  documented criteria, not an ad-hoc pin. A **selection harness** runs the golden `/ask` set across a
+  set of **candidate models**, scores each on **quality** (the same deterministic checks + groundedness
+  + helpfulness judges), **cost** (from a documented price table), and **latency**, and selects by a
+  documented rule (a quality **floor** first, then lowest cost, then latency). The candidates, their
+  scores, the selected model, and the rationale are written to **selection metadata** (mirroring the ML
+  model's `selection_rationale`), and the decision is recorded in **ADR-0009**. Because it makes paid
+  calls across models, the harness is a **manual/periodic** tool (like model retraining), not a
+  per-PR gate. The answer model MUST be **configurable** (env), so the selected champion is a config
+  change, not a code edit.
+
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: A prompt/agent change that breaks citing or grounding **fails CI** and cannot merge.
@@ -117,6 +154,13 @@ language** ("failing", "worst", "best/worst" rankings-as-judgement); a violation
 - **SC-005**: Eval scores are **recorded over time** (a trend is queryable), not just pass/fail.
 - **SC-006**: The scheduled run catches a model-tier-induced regression with **no code change**.
 - **SC-007**: The deterministic gate runs with **no paid model calls**; the judge is opt-in/throttled.
+- **SC-008 (v2.0.0)**: The trend and value-for-money regression cases **fail** on the pre-fix answers
+  (a row dump; a wrongful decline) and **pass** on the fixed ones — the regressions can't re-merge.
+- **SC-009 (v2.0.0)**: A fully-grounded but useless answer (restates rows, states no conclusion)
+  **fails** the helpfulness judge while passing groundedness.
+- **SC-010 (v2.0.0)**: `python -m evals.select_model` produces a ranked table (quality, cost, latency)
+  across candidate models and writes selection metadata naming the champion + rationale; changing the
+  champion is an **env** change, not a code edit.
 
 ## Out of Scope
 

@@ -7,6 +7,7 @@
   "brief_band": 1.5,
   "numbers_tolerance": 0.02,
   "groundedness_floor": 0.7,
+  "helpfulness_floor": 0.7,
   "rmse_regression_tolerance": 0.30,
   "data_quality": {
     "min_rows": 200,
