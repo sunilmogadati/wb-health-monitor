@@ -1,0 +1,26 @@
+# Change-Traceability gate (Constitution: Change Traceability). Fails a PR that changes behavior
+# without a traceable artifact — a spec (new/amended), an ADR (refactor), or an FR-named regression
+# test (bug). See scripts/check_traceability.py for the lane routing and the escape hatch.
+name: traceability
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  traceability:
+    name: change-traceability gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history so the merge-base diff (base...HEAD) resolves
+
+      - name: Fetch base branch
+        run: git fetch --no-tags origin ${{ github.base_ref }}
+
+      - name: Gate
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python scripts/check_traceability.py
