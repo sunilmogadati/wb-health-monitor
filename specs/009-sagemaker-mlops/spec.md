@@ -4,7 +4,17 @@
 
 **Created**: 2026-08-19
 
-**Status**: Draft — needs `/speckit.clarify` review before Accepted
+**Status**: Accepted (2026-08-20) — as a **documented alternative track**; IaC authored as reference,
+not applied (needs a credentialed session + a deliberate cost decision).
+
+**Clarifications (2026-08-20)**:
+- **Serving (FR-005)** → **default = the API loads the latest Approved artifact from S3** (least
+  SageMaker surface; reuses spec 007 FR-006). The Serverless Inference endpoint is authored but
+  **off by default** (a documented, cost-gated opt-in). No always-on endpoint.
+- **Promotion gate** → the SageMaker **Registry approval REPLACES** spec 008's champion/challenger for
+  the managed track (FR-004) — **one gate, not both**. On the DIY track (007/008), 008's gate stays.
+- **Right-sizing** → adopted as a *deliberate alternative* for teaching/portfolio + headroom, not
+  because the ~357-row model needs it (the DIY path in 007/008 is correctly sized).
 
 **Depends on**: spec 002 (the model + `train.py`), spec 007 (AWS infra — VPC/RDS/S3/roles it reuses).
 **Alternative to** parts of 007 + 008: it replaces the **model** training/gating/serving slice with AWS
